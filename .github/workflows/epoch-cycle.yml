@@ -1,0 +1,29 @@
+name: Epoch Cycle
+
+on:
+  schedule:
+    # Every 12 hours: midnight and noon UTC
+    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Manual trigger from GitHub UI
+
+jobs:
+  run-epoch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger epoch cycle
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.SITE_URL }}/api/cycle" \
+            -H "Authorization: Bearer ${{ secrets.CYCLE_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          echo "Response code: $response"
+          
+          if [ "$response" != "200" ]; then
+            echo "::error::Epoch cycle failed with status $response"
+            exit 1
+          fi
+          
+          echo "✅ Epoch cycle triggered successfully"

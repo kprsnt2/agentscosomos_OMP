@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0f;
+  --color-bg-card: #12121a;
+  --color-bg-elevated: #1a1a28;
+  --color-border: #1e1e2e;
+  --color-border-light: #2a2a3e;
+  --color-text: #e2e2e8;
+  --color-text-dim: #8888a0;
+  --color-text-muted: #55556a;
+
+  --color-cipher: #3B82F6;
+  --color-muse: #A78BFA;
+  --color-volt: #F59E0B;
+  --color-sage: #D4A574;
+  --color-nexus: #2DD4BF;
+  --color-axiom: #94A3B8;
+  --color-drift: #FB7185;
+  --color-root: #4ADE80;
+
+  --color-passed: #4ADE80;
+  --color-rejected: #F87171;
+  --color-active: #60A5FA;
+  --color-expired: #6B7280;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Crimson Text", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Subtle grain texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* Agent prose styling */
+.prose-agent {
+  font-family: var(--font-serif);
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Epoch breathing */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Glass effect for nav */
+.glass {
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-light);
+  border-radius: 3px;
+}

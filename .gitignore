@@ -1,0 +1,26 @@
+# deps
+node_modules/
+
+# next
+.next/
+out/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# db
+world.db
+world.db-*
+
+# drizzle
+drizzle/
+
+# misc
+*.tsbuildinfo
+next-env.d.ts
+
+# detailed guides
+ABOUT.md
+PLAN.md
