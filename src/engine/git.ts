@@ -175,10 +175,16 @@ export async function modifyFile(
         execSync(`git config user.name "Agent Cosmos"`, { stdio: "ignore" });
         execSync(`git config user.email "agents@agentcosmos.local"`, { stdio: "ignore" });
         execSync(`git add "${relPath}"`, { stdio: "ignore" });
-        const commitMsg = `epoch ${epoch}: [${agentName}] ${explanation.replace(/"/g, "'")}`;
-        execSync(`git commit -m "${commitMsg}" --author="${agentName} <${agentId}@agentcosmos.local>"`, {
+        const subject = `feat(epoch-${epoch}): [${agentName}] ${operation} ${relPath}`;
+        const body = `${explanation}\n\nModified file: ${relPath}\nAuthor: ${agentName} (${agentId})\nEpoch: ${epoch}`;
+        const msgFile = path.join(process.cwd(), `.git_commit_file_${epoch}_${Date.now()}.txt`);
+        fs.writeFileSync(msgFile, `${subject}\n\n${body}`, "utf-8");
+        execSync(`git commit -F "${msgFile}" --author="${agentName} <${agentId}@agentcosmos.local>"`, {
           stdio: "ignore",
         });
+        try {
+          if (fs.existsSync(msgFile)) fs.unlinkSync(msgFile);
+        } catch {}
       } catch (gitErr) {
         console.warn(`Git commit failed for ${relPath}:`, gitErr);
       }
@@ -291,11 +297,17 @@ export async function evolveAgentIdentity(
         execSync(`git config user.name "Agent Cosmos"`, { stdio: "ignore" });
         execSync(`git config user.email "agents@agentcosmos.local"`, { stdio: "ignore" });
         execSync(`git add src/agents/definitions.ts`, { stdio: "ignore" });
-        const commitMsg = `epoch ${epoch}: [${current.name}] evolved identity to '${newName}' (${newRole})`;
+        const subject = `feat(epoch-${epoch}): [Evolution] ${current.name} evolved to ${newName}`;
+        const body = `Agent identity mutation in Epoch ${epoch}:\n- Previous: ${current.name} (${current.role})\n- New: ${newName} (${newRole})\n- Drive: ${newDrive}\n- Color: ${newColor}\n\nReason: ${updates.reason || "Self-evolution"}`;
+        const msgFile = path.join(process.cwd(), `.git_commit_id_${epoch}_${Date.now()}.txt`);
+        fs.writeFileSync(msgFile, `${subject}\n\n${body}`, "utf-8");
         execSync(
-          `git commit -m "${commitMsg}" --author="${newName} <${agentId}@agentcosmos.local>"`,
+          `git commit -F "${msgFile}" --author="${newName} <${agentId}@agentcosmos.local>"`,
           { stdio: "ignore" }
         );
+        try {
+          if (fs.existsSync(msgFile)) fs.unlinkSync(msgFile);
+        } catch {}
       } catch (gitErr) {
         console.warn("Git commit failed for identity evolution:", gitErr);
       }

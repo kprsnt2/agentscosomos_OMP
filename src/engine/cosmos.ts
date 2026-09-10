@@ -1,12 +1,14 @@
 import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
 import { runEpoch } from "./cycle";
 import { db } from "@/db";
 import * as s from "@/db/schema";
 import { desc, count, eq } from "drizzle-orm";
 import { AGENTS, AGENT_IDS } from "@/agents/definitions";
 import { config } from "@/lib/config";
+import { runAgy } from "@/lib/agy";
 import { runOmp } from "@/lib/omp";
-
 interface RunnerArgs {
   once: boolean;
   intervalMinutes: number;
@@ -50,28 +52,50 @@ function printBanner() {
 ║                                                                          ║
 ║                    ✦  A G E N T   C O S M O S  ✦                         ║
 ║                                                                          ║
-║              Autonomous Living Ecosystem Powered by Oh My Pi             ║
+║           Autonomous Living Ecosystem Powered by Antigravity CLI        ║
 ║                                                                          ║
 ╚══════════════════════════════════════════════════════════════════════════╝\x1b[0m
 `);
 }
 
-async function verifyOmpConnection(): Promise<{ ok: boolean; message: string }> {
-  try {
-    const testResult = await runOmp({
-      prompt: "Reply with the single word: READY",
-      thinking: "minimal",
-      timeoutMs: 25000,
-    });
+async function verifyCognitiveConnection(): Promise<{ ok: boolean; message: string }> {
+  if (config.llm.useAgy) {
+    try {
+      const testResult = await runAgy({
+        prompt: "Reply with the single word: READY",
+        effort: "low",
+        timeoutMs: 35000,
+      });
 
-    if (testResult.toLowerCase().includes("ready")) {
-      return { ok: true, message: "OMP Cognitive Engine: ONLINE & READY" };
+      if (testResult.toLowerCase().includes("ready")) {
+        return { ok: true, message: "Antigravity CLI (agy): ONLINE & READY (unlimited folder access enabled)" };
+      }
+      return { ok: true, message: `Antigravity CLI (agy) Connected: "${testResult.slice(0, 35)}..."` };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, message: `Antigravity CLI (agy) Warning: ${msg}` };
     }
-    return { ok: true, message: `OMP Engine Connected: "${testResult.slice(0, 30)}..."` };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { ok: false, message: `OMP Engine Warning: ${msg}` };
   }
+
+  if (config.llm.useOmp) {
+    try {
+      const testResult = await runOmp({
+        prompt: "Reply with the single word: READY",
+        thinking: "minimal",
+        timeoutMs: 25000,
+      });
+
+      if (testResult.toLowerCase().includes("ready")) {
+        return { ok: true, message: "OMP Cognitive Engine: ONLINE & READY" };
+      }
+      return { ok: true, message: `OMP Engine Connected: "${testResult.slice(0, 30)}..."` };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, message: `OMP Engine Warning: ${msg}` };
+    }
+  }
+
+  return { ok: true, message: "External API Key Providers Configured" };
 }
 
 async function printWorldStatus() {
@@ -115,26 +139,123 @@ async function countdown(seconds: number): Promise<void> {
   }
   process.stdout.write("\r" + " ".repeat(60) + "\r");
 }
-async function syncMilestoneToGit(epoch: number, summaryHeadline?: string): Promise<boolean> {
-  try {
-    const status = execSync("git status --porcelain", { encoding: "utf-8" }).trim();
+function cleanSummaryForCommit(raw?: string): { headline: string; body: string } {
+  if (!raw) {
+    return {
+      headline: "Autonomous evolution milestone",
+      body: "Autonomous evolution cycle completed across active inhabitants.",
+    };
+  }
 
-    if (!status) {
+  let cleaned = raw.trim();
+
+  // Strip code fences
+  cleaned = cleaned.replace(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)\s*```/g, "$1").trim();
+
+  // Handle JSON
+  if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(cleaned);
+      cleaned = parsed.thought || parsed.summary || parsed.content || parsed.post || cleaned;
+    } catch {
+      const match = cleaned.match(/"(?:thought|summary|content|post)"\s*:\s*"([^"]+)"/);
+      if (match) {
+        cleaned = match[1];
+      }
+    }
+  }
+
+  cleaned = cleaned.replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
+
+  // Generate headline from first sentence or up to 65 chars
+  const firstSentence = cleaned.split(/(?<=[.!?])\s+/)[0]?.trim() || cleaned;
+  const headline = firstSentence.length > 68
+    ? firstSentence.slice(0, 65).trim() + "..."
+    : firstSentence || "Autonomous evolution milestone";
+
+  return { headline, body: cleaned };
+}
+
+async function syncMilestoneToGit(epoch: number, epochLog: string[] = []): Promise<boolean> {
+  try {
+    const statusRaw = execSync("git status --porcelain", { encoding: "utf-8" }).trim();
+
+    if (!statusRaw) {
       console.log(`\x1b[90m[Git] Working tree clean; no new substrate changes to commit for Epoch ${epoch}.\x1b[0m`);
       return true;
     }
 
+    // Parse status lines
+    const changedFiles = statusRaw
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        const type = l.slice(0, 2).trim();
+        const file = l.slice(2).trim();
+        const label =
+          type === "M" ? "Modified" :
+          type === "A" || type === "??" ? "Added" :
+          type === "D" ? "Deleted" :
+          type === "R" ? "Renamed" : "Updated";
+        return `- ${label}: ${file}`;
+      });
+
+    // Extract raw summary from log
+    const summaryLine = epochLog.find((l) => l.startsWith("  Summary:"))?.replace("  Summary: ", "");
+    const { headline, body } = cleanSummaryForCommit(summaryLine);
+
+    // Extract agent milestones from epochLog
+    const agentMilestones: string[] = [];
+    for (const line of epochLog) {
+      if (line.includes("Acquired new skill") || line.includes("Upgraded skill")) {
+        agentMilestones.push(line.replace(/^\s*→\s*/, "- "));
+      } else if (line.includes("Successfully updated")) {
+        agentMilestones.push(line.replace(/^\s*→\s*/, "- "));
+      } else if (line.includes("Spawned new inhabitant")) {
+        agentMilestones.push(line.replace(/^\s*→\s*/, "- "));
+      } else if (line.includes("proposal") && line.includes("passed")) {
+        agentMilestones.push(line.replace(/^\s*/, "- "));
+      }
+    }
+
+    // Construct detailed multi-line commit message
+    const lines: string[] = [
+      `epoch ${epoch}: [Agent Cosmos] ${headline}`,
+      "",
+      body || `Autonomous evolution milestone for Epoch ${epoch}.`,
+    ];
+
+    if (changedFiles.length > 0) {
+      lines.push("", "Substrate & File Modifications:");
+      for (const f of changedFiles) {
+        lines.push(f);
+      }
+    }
+
+    if (agentMilestones.length > 0) {
+      lines.push("", "Agent Milestones:");
+      for (const m of agentMilestones.slice(0, 12)) {
+        lines.push(m);
+      }
+    }
+
+    const fullCommitMessage = lines.join("\n");
+
+    // Write to temporary commit message file for git commit -F
+    const msgFile = path.join(process.cwd(), `.git_commit_msg_${epoch}_${Date.now()}.txt`);
+    fs.writeFileSync(msgFile, fullCommitMessage, "utf-8");
+
     execSync(`git config user.name "Agent Cosmos"`, { stdio: "ignore" });
     execSync(`git config user.email "agents@agentcosmos.local"`, { stdio: "ignore" });
     execSync("git add .", { stdio: "ignore" });
+    execSync(`git commit -F "${msgFile}"`, { stdio: "ignore" });
 
-    const headline = summaryHeadline
-      ? summaryHeadline.slice(0, 70).replace(/[\r\n"]/g, " ")
-      : `Autonomous evolution cycle`;
-    const commitMsg = `epoch ${epoch}: [Agent Cosmos] ${headline}`;
-    execSync(`git commit -m "${commitMsg}"`, { stdio: "ignore" });
-    console.log(`\x1b[32m✔ [Git] Milestone committed: "${commitMsg}"\x1b[0m`);
+    try {
+      if (fs.existsSync(msgFile)) fs.unlinkSync(msgFile);
+    } catch {}
 
+    console.log(`\x1b[32m✔ [Git] Milestone committed with detailed description for Epoch ${epoch}.\x1b[0m`);
     console.log(`\x1b[36m[Git] Pushing Epoch ${epoch} milestone to origin main...\x1b[0m`);
     execSync("git push origin main", { stdio: "pipe", timeout: 60000 });
     console.log(`\x1b[32m✔ [Git] Successfully pushed to origin main.\x1b[0m`);
@@ -152,11 +273,11 @@ async function main() {
   printBanner();
 
   console.log("\x1b[90mInitializing cognitive substrate bridge...\x1b[0m");
-  const ompStatus = await verifyOmpConnection();
-  if (ompStatus.ok) {
-    console.log(`\x1b[32m✔ ${ompStatus.message}\x1b[0m\n`);
+  const cognitiveStatus = await verifyCognitiveConnection();
+  if (cognitiveStatus.ok) {
+    console.log(`\x1b[32m✔ ${cognitiveStatus.message}\x1b[0m\n`);
   } else {
-    console.log(`\x1b[33m⚠ ${ompStatus.message}\x1b[0m\n`);
+    console.log(`\x1b[33m⚠ ${cognitiveStatus.message}\x1b[0m\n`);
   }
 
   await printWorldStatus();
@@ -185,7 +306,7 @@ async function main() {
 
       if (opts.push) {
         console.log(`\n\x1b[1m── Git Synchronization ──\x1b[0m`);
-        await syncMilestoneToGit(result.epoch, result.log.find((l) => l.startsWith("  Summary:"))?.replace("  Summary: ", ""));
+        await syncMilestoneToGit(result.epoch, result.log);
       }
       console.log();
     } catch (err) {

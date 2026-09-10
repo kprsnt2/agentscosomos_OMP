@@ -4,7 +4,12 @@ export const config = {
     authToken: process.env.DATABASE_AUTH_TOKEN,
   },
   llm: {
-    useOmp: process.env.USE_OMP !== "false",
+    useAgy: process.env.USE_AGY !== "false",
+    agy: {
+      model: process.env.AGY_MODEL || "",
+      effort: (process.env.AGY_EFFORT as "low" | "medium" | "high") || "low",
+    },
+    useOmp: process.env.USE_OMP === "true",
     omp: {
       model: process.env.OMP_MODEL || "",
       thinking: (process.env.OMP_THINKING as "off" | "minimal" | "low" | "medium" | "high") || "minimal",

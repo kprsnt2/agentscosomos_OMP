@@ -52,8 +52,29 @@ export function parseJSON<T>(raw: string): T {
       const noTrailingCommas = cleaned.replace(/,\s*([}\]])/g, "$1");
       return JSON.parse(noTrailingCommas);
     } catch {
-      // Fix unescaped control characters and lone backslashes in multiline string values
-      const sanitized = cleaned
+      // Fix unescaped control characters inside multiline string literals
+      let inString = false;
+      let escaped = false;
+      let buf = "";
+      for (let i = 0; i < cleaned.length; i++) {
+        const ch = cleaned[i];
+        if (ch === '"' && !escaped) {
+          inString = !inString;
+          buf += ch;
+        } else if (inString && ch === "\n") {
+          buf += "\\n";
+        } else if (inString && ch === "\r") {
+          buf += "\\r";
+        } else if (inString && ch === "\t") {
+          buf += "\\t";
+        } else {
+          buf += ch;
+        }
+        escaped = ch === "\\" && !escaped;
+      }
+
+      // Fix unescaped lone backslashes and trailing commas
+      const sanitized = buf
         .replace(/(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, "\\\\")
         .replace(/,\s*([}\]])/g, "$1");
       return JSON.parse(sanitized);

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { config, type ProviderConfig } from "./config";
+import { runAgy } from "./agy";
 import { runOmp } from "./omp";
 import { estimateTokens } from "./utils";
 // ── Rate limiter ────────────────────────────────────────────────────────────
@@ -70,7 +71,32 @@ export interface CompletionResult {
 }
 
 export async function complete(params: CompletionParams): Promise<CompletionResult> {
-  // Primary execution path: Oh My Pi (OMP)
+  // Primary execution path: Antigravity CLI (agy)
+  if (config.llm.useAgy) {
+    try {
+      const content = await runAgy({
+        prompt: params.prompt,
+        system: params.system,
+        model: config.llm.agy.model || undefined,
+        effort: config.llm.agy.effort,
+      });
+
+      return {
+        content,
+        provider: "agy",
+        model: config.llm.agy.model || "antigravity",
+        tokensUsed: {
+          prompt: estimateTokens(params.system + params.prompt),
+          completion: estimateTokens(content),
+        },
+      };
+    } catch (agyErr) {
+      console.warn(`[LLM] Antigravity CLI (agy) execution failed, attempting fallback:`, agyErr);
+      // Continue to next provider
+    }
+  }
+
+  // Secondary CLI path: Oh My Pi (OMP)
   if (config.llm.useOmp) {
     try {
       const content = await runOmp({
@@ -90,12 +116,7 @@ export async function complete(params: CompletionParams): Promise<CompletionResu
         },
       };
     } catch (ompErr) {
-      console.warn(`[LLM] OMP execution failed, attempting fallback if available:`, ompErr);
-      // If fallback API keys exist, continue; otherwise re-throw
-      const available = config.llm.providers.filter((p) => p.apiKey);
-      if (available.length === 0) {
-        throw ompErr;
-      }
+      console.warn(`[LLM] OMP execution failed, attempting fallback:`, ompErr);
     }
   }
 
