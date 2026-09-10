@@ -15,10 +15,22 @@ export const config = {
         model: process.env.OPENAI_MODEL || "gpt-5.4-mini",
       },
       {
+        name: "openai-nano" as const,
+        baseURL: "https://api.openai.com/v1",
+        apiKey: process.env.OPENAI_API_KEY || "",
+        model: process.env.OPENAI_NANO_MODEL || "gpt-5.4-nano",
+      },
+      {
         name: "openrouter" as const,
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY || "",
-        model: process.env.OPENROUTER_MODEL || "inkling",
+        model: process.env.OPENROUTER_MODEL || "thinkingmachines/inkling:free",
+      },
+      {
+        name: "openrouter-backup" as const,
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: process.env.OPENROUTER_API_KEY || "",
+        model: process.env.OPENROUTER_BACKUP_MODEL || "nvidia/nemotron-3-ultra-550b-a55b:free",
       },
       {
         name: "groq" as const,
@@ -36,7 +48,7 @@ export const config = {
         name: "gemini" as const,
         baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
         apiKey: process.env.GEMINI_API_KEY || "",
-        model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+        model: process.env.GEMINI_MODEL || "gemini-flash-latest",
       },
     ],
   },

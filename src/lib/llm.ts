@@ -96,7 +96,7 @@ export async function complete(params: CompletionParams): Promise<CompletionResu
         ],
         temperature: params.temperature ?? 0.8,
         stream: false,
-        ...(provider.name === "openai"
+        ...(provider.name.startsWith("openai")
           ? { max_completion_tokens: tokenLimit }
           : { max_tokens: tokenLimit }),
       };
