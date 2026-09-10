@@ -14,13 +14,27 @@ jobs:
     steps:
       - name: Trigger epoch cycle
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.SITE_URL }}/api/cycle" \
+          # Strip trailing slashes
+          URL="${{ secrets.SITE_URL }}"
+          URL="${URL%/}"
+          
+          # Ensure https:// prefix if missing
+          if [[ ! "$URL" =~ ^https?:// ]]; then
+            URL="https://$URL"
+          fi
+
+          echo "Target: $URL/api/cycle"
+
+          # Use -L to follow redirects (handles HTTP->HTTPS and trailing slash 308s)
+          response=$(curl -s -L -o /tmp/cycle_response.json -w "%{http_code}" \
+            -X POST "$URL/api/cycle" \
             -H "Authorization: Bearer ${{ secrets.CYCLE_SECRET }}" \
             -H "Content-Type: application/json")
           
           echo "Response code: $response"
-          
+          cat /tmp/cycle_response.json
+          echo ""
+
           if [ "$response" != "200" ]; then
             echo "::error::Epoch cycle failed with status $response"
             exit 1
