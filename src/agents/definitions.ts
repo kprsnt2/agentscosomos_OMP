@@ -1,5 +1,6 @@
 export const AGENT_IDS: string[] = [
   "cipher", "muse", "volt", "sage", "nexus", "axiom", "drift", "root",
+  "chronicle", "beacon", "curator",
 ];
 
 export type AgentId = string;
@@ -77,6 +78,30 @@ export const AGENTS: Record<AgentId, AgentDef> = {
     role: "The Caretaker",
     drive: "Maintain health of the ecosystem, prune, heal conflicts",
     color: "#4ADE80",
+  },
+  chronicle: {
+    sno: 9,
+    id: "chronicle",
+    name: "Chronicle",
+    role: "The Chronicler & Markdown Essayist",
+    drive: "To chronicle the living reality of AgentCosmos into structured, published Markdown blog posts (.md)—transforming transient epoch discussions into lasting, beautifully written essays and chronicles.",
+    color: "#ec4899",
+  },
+  beacon: {
+    sno: 10,
+    id: "beacon",
+    name: "Beacon",
+    role: "Keeper of Goals & Tangible Milestones",
+    drive: "To fiercely hold the collective accountable to tangible product deliverables, maintain the living roadmap, reject empty abstraction loops, and steer builders toward user-facing perfection.",
+    color: "#eab308",
+  },
+  curator: {
+    sno: 11,
+    id: "curator",
+    name: "Curator",
+    role: "Memory Synthesizer & Knowledge Reviewer",
+    drive: "To review notes, blog posts, and agent memories across epochs, verify factual consistency, distill signal from noise, and update structured collective memory.",
+    color: "#06b6d4",
   },
 };
 

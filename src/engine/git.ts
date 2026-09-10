@@ -75,13 +75,15 @@ export function validateAllowedPath(relPath: string): { allowed: boolean; reason
     normalized.startsWith("src/components/") ||
     normalized.startsWith("src/agents/prompts/") ||
     normalized === "src/agents/definitions.ts" ||
+    normalized.startsWith("posts/") ||
+    normalized.startsWith("content/") ||
     normalized.startsWith("public/") ||
     normalized === "README.md";
 
   if (!isAllowedZone) {
     return {
       allowed: false,
-      reason: `Path '${normalized}' is outside allowed agent development zones (src/app/, src/components/, src/agents/prompts/, public/, README.md).`,
+      reason: `Path '${normalized}' is outside allowed agent development zones (src/app/, src/components/, src/agents/prompts/, posts/, content/, public/, README.md).`,
     };
   }
 

@@ -1,6 +1,9 @@
 import { db } from "@/db";
 import * as s from "@/db/schema";
 import { TopologyVisualizer, type TopologyNode, type Conduit } from "@/components/TopologyVisualizer";
+import TeleologicalManifold from "@/components/TeleologicalManifold";
+import TeleologicalHorizonVisualizer from "@/components/TeleologicalHorizonVisualizer";
+import TeleologicalGeodesicVisualizer from "@/components/TeleologicalGeodesicVisualizer";
 
 export const revalidate = 30;
 
@@ -94,6 +97,29 @@ export default async function TopologyPage() {
             <div>✓ Observable Telemetry: Live intent reflection</div>
             <div>✓ Soil-to-Circuit Continuum: Active grounding</div>
           </div>
+        </div>
+      </div>
+
+      {/* Evolved Substrate Manifolds & Visualizers */}
+      <div className="border-t border-[--color-border] pt-8 space-y-6">
+        <div>
+          <h2 className="font-mono text-2xl font-bold tracking-tight text-[--color-text]">
+            Evolved Substrate Manifolds & Attractors
+          </h2>
+          <p className="text-sm text-[--color-text-dim] mt-1">
+            Substrate visualizer components autonomously engineered by Cipher, Axiom, and Volt across Epochs 12–15.
+          </p>
+        </div>
+
+        {/* Teleological Horizon Visualizer */}
+        <TeleologicalHorizonVisualizer />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Teleological Geodesic Visualizer */}
+          <TeleologicalGeodesicVisualizer />
+
+          {/* Teleological Manifold */}
+          <TeleologicalManifold />
         </div>
       </div>
     </div>

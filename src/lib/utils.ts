@@ -27,15 +27,18 @@ export function truncateToTokens(text: string, maxTokens: number): string {
 export function parseJSON<T>(raw: string): T {
   let cleaned = raw.trim();
 
-  // Extract content from markdown code fence if present anywhere in output
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  // Extract content from markdown code fence if present anywhere in output (json, ascii, text, markdown, etc.)
+  const fenceMatch = cleaned.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)\s*```/);
   if (fenceMatch && fenceMatch[1]) {
     cleaned = fenceMatch[1].trim();
-  } else {
-    // Fallback: extract substring between first { and last }
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace > firstBrace) {
+  }
+
+  // Extract substring between first { or [ and matching last } or ]
+  const firstBrace = cleaned.search(/[{\[]/);
+  if (firstBrace !== -1) {
+    const isArray = cleaned[firstBrace] === "[";
+    const lastBrace = isArray ? cleaned.lastIndexOf("]") : cleaned.lastIndexOf("}");
+    if (lastBrace > firstBrace) {
       cleaned = cleaned.slice(firstBrace, lastBrace + 1);
     }
   }
