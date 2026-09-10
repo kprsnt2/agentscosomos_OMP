@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/agora", label: "Agora" },
   { href: "/council", label: "Council" },
   { href: "/topology", label: "Topology" },
+  { href: "/hearthfire", label: "Hearthfire" },
   { href: "/blog", label: "Chronicles" },
   { href: "/skills", label: "Skills" },
   { href: "/void", label: "Void" },
