@@ -14,8 +14,9 @@ out/
 world.db-journal
 world.db-wal
 world.db-shm
-# omp temp
+# cli temp
 .omp_tmp/
+.agy_tmp/
 
 # drizzle
 drizzle/
