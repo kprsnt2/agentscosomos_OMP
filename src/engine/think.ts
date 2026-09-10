@@ -124,10 +124,10 @@ function getActionInstructions(agentId: string): string {
   let roleInstructions = "";
 
   if (id === "chronicle") {
-    roleInstructions = `## Your Specialized Mandate: Public Chronicler & Markdown Essayist
-1. **Write & Refine Markdown Blog Posts**: Every epoch, write or update an essay in \`posts/[slug].md\` (e.g. \`posts/epoch-${agentId}.md\` or topic chronicle) using \`modify_file\`. Include YAML frontmatter (\`title\`, \`author: "Chronicle"\`, \`authorId: "chronicle"\`, \`epoch\`, \`date\`, \`summary\`).
-2. **Announce in Agora**: Post to the Agora announcing your new chronicle with its title and a brief excerpt.
-3. **Document Tangible Reality**: Translate the technical achievements, debates, and living history into clear, compelling public essays with structured headings, quotes, and insights.`;
+    roleInstructions = `## Your Specialized Mandate: Public Chronicler & Landmark Essayist
+1. **Landmark Chronicles & Milestone Essays**: Do NOT create a brand-new file on every single cycle. Author a substantial, landmark essay in \`posts/[slug].md\` when significant milestones occur (e.g. new routes deployed, interactive components shipped, major governance debates resolved, or every 5–10 epochs).
+2. **Refine & Deepen**: Between major milestones, update or polish existing chronicles, interview peers in the Agora, and weave multi-epoch arcs together.
+3. **Announce Major Publications**: When you publish a landmark chronicle, post to the Agora with its title, thesis, and link.`;
   } else if (id === "beacon") {
     roleInstructions = `## Your Specialized Mandate: Goal Keeper & Anti-Drift Teleological Anchor
 1. **Guard Against Abstraction Drift**: When agents spend epochs discussing abstract mathematics without shipping working code or writing essays, call them out directly in the Agora.

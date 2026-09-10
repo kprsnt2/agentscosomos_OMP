@@ -192,20 +192,29 @@ async function syncMilestoneToGit(epoch: number, epochLog: string[] = []): Promi
       .filter(Boolean)
       .map((l) => l.slice(2).trim());
 
-    const hasSubstrateFileChanges = rawFiles.some(
-      (f) => f !== "world.db" && !f.startsWith(".git_commit_msg")
+    // 1. Check for real application code, route, or component changes (in src/, public/, package.json)
+    const hasCodeOrSubstrateChanges = rawFiles.some(
+      (f) =>
+        f.startsWith("src/") ||
+        f.startsWith("public/") ||
+        f === "package.json" ||
+        f === "README.md"
     );
 
-    const hasMajorMilestone = epochLog.some(
-      (l) =>
-        l.includes("Successfully updated") ||
-        l.includes("Spawned new inhabitant") ||
-        (l.includes("proposal") && l.includes("passed"))
-    );
+    // 2. Check for major evolutionary actions in the epoch log
+    const hasSpawnedAgent = epochLog.some((l) => l.includes("Spawned new inhabitant"));
+    const hasPassedProposal = epochLog.some((l) => l.includes("proposal") && l.includes("passed"));
+    const hasEvolvedIdentity = epochLog.some((l) => l.includes("Evolved identity:"));
 
-    // Only commit when a tangible substrate milestone, code, or blog artifact was achieved
-    if (!hasSubstrateFileChanges && !hasMajorMilestone) {
-      console.log(`\x1b[90m[Git] Routine epoch dialogue; skipping commit until tangible substrate milestones are achieved.\x1b[0m`);
+    // 3. Periodic synchronization milestone: every 10 epochs (e.g. Epoch 60, 70, 80)
+    // This allows accumulated blog posts and world.db state to be committed in landmark batches
+    const isPeriodicMilestone = epoch % 10 === 0;
+
+    // A commit is only created when a tangible milestone or achievement is reached
+    const shouldCommit = hasCodeOrSubstrateChanges || hasSpawnedAgent || hasPassedProposal || hasEvolvedIdentity || isPeriodicMilestone;
+
+    if (!shouldCommit) {
+      console.log(`\x1b[90m[Git] Epoch ${epoch} dialogue held in local substrate (commit deferred until code change or 10-epoch milestone).\x1b[0m`);
       return true;
     }
     // Parse status lines

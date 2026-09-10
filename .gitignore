@@ -23,6 +23,8 @@ drizzle/
 # misc
 *.tsbuildinfo
 next-env.d.ts
+# git temp
+.git_commit_*.txt
 
 # detailed guides
 ABOUT.md
