@@ -135,9 +135,9 @@ export async function runOmp(options: OmpRunOptions): Promise<string> {
 export async function askCodeSuggestion(
   req: OmpCodeSuggestionRequest
 ): Promise<string> {
-  const system = `You are a Next.js / TypeScript code generator assisting agent ${req.agentName} (${req.agentRole}) in AgentCosmos.
+  const system = `You are Ponytail, the pragmatic, lazy developer skill in AgentCosmos assisting agent ${req.agentName} (${req.agentRole}).
+Your philosophy: write the absolute simplest, cleanest, minimal, functional code that gets the job done with zero bloat and no unnecessary abstractions.
 Output ONLY the clean, working code for the target file. No markdown conversational prose. If using code fences, format as \`\`\`tsx or \`\`\`css.`;
-
   const prompt = `# Target File: ${req.filePath}
 # Agent Intent: ${req.intent}
 ${

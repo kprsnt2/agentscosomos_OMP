@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { runEpoch } from "./cycle";
 import { db } from "@/db";
 import * as s from "@/db/schema";
-import { desc, count } from "drizzle-orm";
+import { desc, count, eq } from "drizzle-orm";
 import { AGENTS, AGENT_IDS } from "@/agents/definitions";
 import { config } from "@/lib/config";
 import { runOmp } from "@/lib/omp";
@@ -169,7 +169,7 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Cycles trigger every \x1b[1m${opts.intervalMinutes}\x1b[0m minutes (1 hour). Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
+  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Dynamic cadence: \x1b[1m15–20 minutes\x1b[0m (decided by inhabitants). Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
 
   let cycleCount = 0;
   while (true) {
@@ -192,8 +192,20 @@ async function main() {
       console.error(`\x1b[31m✖ Epoch execution encountered an issue:\x1b[0m`, err);
     }
 
-    console.log("\x1b[90mAgents entering dormancy...\x1b[0m");
-    await countdown(opts.intervalMinutes * 60);
+    // Check if agents have configured a specific interval in siteConfig
+    const configInterval = await db
+      .select()
+      .from(s.siteConfig)
+      .where(eq(s.siteConfig.key, "epoch_interval_minutes"))
+      .limit(1);
+
+    // If configured by agents, use it; otherwise pick a random 15-20 min interval
+    const chosenMinutes = configInterval[0]?.value && !isNaN(Number(configInterval[0].value))
+      ? Number(configInterval[0].value)
+      : Math.floor(Math.random() * 6) + 15; // 15 to 20 minutes
+
+    console.log(`\x1b[90mAgents entering dormancy for \x1b[36m${chosenMinutes} minutes\x1b[90m (decided by continuum rhythm)...\x1b[0m`);
+    await countdown(chosenMinutes * 60);
   }
 }
 
