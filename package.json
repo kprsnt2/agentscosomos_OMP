@@ -10,7 +10,10 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "cycle": "tsx src/engine/run.ts"
+    "cycle": "tsx src/engine/run.ts",
+    "cosmos": "tsx src/engine/cosmos.ts",
+    "cosmos:once": "tsx src/engine/cosmos.ts --once",
+    "cosmos:fast": "tsx src/engine/cosmos.ts --interval 5"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

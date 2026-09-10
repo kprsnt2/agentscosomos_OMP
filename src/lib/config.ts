@@ -4,6 +4,11 @@ export const config = {
     authToken: process.env.DATABASE_AUTH_TOKEN,
   },
   llm: {
+    useOmp: process.env.USE_OMP !== "false",
+    omp: {
+      model: process.env.OMP_MODEL || "",
+      thinking: (process.env.OMP_THINKING as "off" | "minimal" | "low" | "medium" | "high") || "minimal",
+    },
     rateLimit: {
       rpm: parseInt(process.env.RATE_LIMIT_RPM || "10", 10),
     },

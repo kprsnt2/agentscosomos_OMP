@@ -166,7 +166,9 @@ export async function modifyFile(
     const agentDef = AGENTS[agentId];
     const agentName = agentDef?.name ?? agentId;
 
-    if (isGitRepo()) {
+    // Only git commit if enabled and milestone achievement reached
+    const canCommit = process.env.ENABLE_GIT_COMMIT === "true";
+    if (isGitRepo() && canCommit) {
       try {
         execSync(`git config user.name "Agent Cosmos"`, { stdio: "ignore" });
         execSync(`git config user.email "agents@agentcosmos.local"`, { stdio: "ignore" });
@@ -280,8 +282,9 @@ export async function evolveAgentIdentity(
       })
       .where(eq(s.agents.id, agentId));
 
-    // Git commit
-    if (isGitRepo()) {
+    // Only git commit if enabled and milestone achievement reached
+    const canCommit = process.env.ENABLE_GIT_COMMIT === "true";
+    if (isGitRepo() && canCommit) {
       try {
         execSync(`git config user.name "Agent Cosmos"`, { stdio: "ignore" });
         execSync(`git config user.email "agents@agentcosmos.local"`, { stdio: "ignore" });

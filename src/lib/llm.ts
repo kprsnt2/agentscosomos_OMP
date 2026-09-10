@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { config, type ProviderConfig } from "./config";
-
+import { runOmp } from "./omp";
+import { estimateTokens } from "./utils";
 // ── Rate limiter ────────────────────────────────────────────────────────────
 
 const callTimestamps: Map<string, number[]> = new Map();
@@ -69,14 +70,42 @@ export interface CompletionResult {
 }
 
 export async function complete(params: CompletionParams): Promise<CompletionResult> {
+  // Primary execution path: Oh My Pi (OMP)
+  if (config.llm.useOmp) {
+    try {
+      const content = await runOmp({
+        prompt: params.prompt,
+        system: params.system,
+        model: config.llm.omp.model || undefined,
+        thinking: config.llm.omp.thinking,
+      });
+
+      return {
+        content,
+        provider: "omp",
+        model: config.llm.omp.model || "configured",
+        tokensUsed: {
+          prompt: estimateTokens(params.system + params.prompt),
+          completion: estimateTokens(content),
+        },
+      };
+    } catch (ompErr) {
+      console.warn(`[LLM] OMP execution failed, attempting fallback if available:`, ompErr);
+      // If fallback API keys exist, continue; otherwise re-throw
+      const available = config.llm.providers.filter((p) => p.apiKey);
+      if (available.length === 0) {
+        throw ompErr;
+      }
+    }
+  }
+
   const available = config.llm.providers.filter((p) => p.apiKey);
 
   if (available.length === 0) {
     throw new Error(
-      "No LLM provider configured. Set at least one API key in .env"
+      "No LLM provider available. OMP failed or disabled, and no API keys configured in .env"
     );
   }
-
   const errors: Array<{ provider: string; error: string }> = [];
 
   for (const provider of available) {

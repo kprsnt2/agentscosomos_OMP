@@ -14,6 +14,9 @@ out/
 world.db
 world.db-*
 
+# omp temp
+.omp_tmp/
+
 # drizzle
 drizzle/
 

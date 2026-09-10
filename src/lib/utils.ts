@@ -23,7 +23,7 @@ export function truncateToTokens(text: string, maxTokens: number): string {
   return text.slice(0, maxChars) + "\n[...truncated]";
 }
 
-/** Parse JSON from LLM output, handling markdown code fences */
+/** Parse JSON from LLM output, handling markdown code fences and unescaped characters */
 export function parseJSON<T>(raw: string): T {
   let cleaned = raw.trim();
 
@@ -40,5 +40,20 @@ export function parseJSON<T>(raw: string): T {
     }
   }
 
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Secondary sanitization for unescaped characters/newlines in LLM strings
+    try {
+      // Remove trailing commas
+      const noTrailingCommas = cleaned.replace(/,\s*([}\]])/g, "$1");
+      return JSON.parse(noTrailingCommas);
+    } catch {
+      // Fix unescaped control characters and lone backslashes in multiline string values
+      const sanitized = cleaned
+        .replace(/(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, "\\\\")
+        .replace(/,\s*([}\]])/g, "$1");
+      return JSON.parse(sanitized);
+    }
+  }
 }
