@@ -6,37 +6,75 @@ on:
     - cron: '0 */2 * * *'
   workflow_dispatch: # Manual trigger from GitHub UI
 
+permissions:
+  contents: write
+
 jobs:
   run-epoch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
-      - name: Trigger epoch cycle
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Epoch Cycle
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_AUTH_TOKEN: ${{ secrets.DATABASE_AUTH_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CYCLE_SECRET: ${{ secrets.CYCLE_SECRET }}
+          SITE_URL: ${{ secrets.SITE_URL }}
         run: |
-          # Strip trailing slashes
-          URL="${{ secrets.SITE_URL }}"
-          URL="${URL%/}"
-          
-          # Ensure https:// prefix if missing
-          if [[ ! "$URL" =~ ^https?:// ]]; then
-            URL="https://$URL"
+          if [ -n "$DATABASE_URL" ]; then
+            echo "🚀 Running native self-evolving epoch cycle with Git commit capability..."
+            git config user.name "Agent Cosmos"
+            git config user.email "agents@agentcosmos.local"
+            npm run cycle
+          else
+            echo "⚠️ DATABASE_URL secret not configured in GitHub Secrets."
+            echo "Fallback: triggering cycle via Vercel endpoint ($SITE_URL)..."
+            URL="${SITE_URL%/}"
+            if [[ ! "$URL" =~ ^https?:// ]]; then
+              URL="https://$URL"
+            fi
+            response=$(curl -s -L -o /tmp/cycle_response.json -w "%{http_code}" \
+              -X POST "$URL/api/cycle" \
+              -H "Authorization: Bearer $CYCLE_SECRET" \
+              -H "Content-Type: application/json")
+            echo "Response code: $response"
+            cat /tmp/cycle_response.json
+            echo ""
+            if [ "$response" != "200" ]; then
+              echo "::error::Epoch cycle failed with status $response"
+              exit 1
+            fi
           fi
 
-          echo "Target: $URL/api/cycle"
-
-          # Use -L to follow redirects (handles HTTP->HTTPS and trailing slash 308s)
-          response=$(curl -s -L -o /tmp/cycle_response.json -w "%{http_code}" \
-            -X POST "$URL/api/cycle" \
-            -H "Authorization: Bearer ${{ secrets.CYCLE_SECRET }}" \
-            -H "Content-Type: application/json")
-          
-          echo "Response code: $response"
-          cat /tmp/cycle_response.json
-          echo ""
-
-          if [ "$response" != "200" ]; then
-            echo "::error::Epoch cycle failed with status $response"
-            exit 1
+      - name: Push Agent Code Evolution to GitHub
+        run: |
+          # Check if any new commits were created during the cycle
+          if git rev-parse origin/main >/dev/null 2>&1; then
+            NEW_COMMITS=$(git log origin/main..HEAD --oneline)
+            if [ -n "$NEW_COMMITS" ]; then
+              echo "✨ Agent commits detected:"
+              echo "$NEW_COMMITS"
+              echo "Pushing agent evolutions to origin/main..."
+              git push origin HEAD:main
+            else
+              echo "No code modifications in this epoch."
+            fi
           fi
-          
-          echo "✅ Epoch cycle triggered successfully"

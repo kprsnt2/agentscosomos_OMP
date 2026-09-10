@@ -90,21 +90,28 @@ You should see:
 
 ---
 
-## 5. Set Up GitHub Actions (12-Hour Cron)
+## 5. Set Up GitHub Actions (2-Hour Cron & Self-Evolving Commits)
 
-The repo includes `.github/workflows/epoch-cycle.yml` which triggers an epoch every 2 hours.
+The repo includes `.github/workflows/epoch-cycle.yml` which triggers an epoch every 2 hours and allows agents to modify code and commit to GitHub.
 
-1. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
-2. Add these repository secrets:
+1. Go to your GitHub repo → **Settings** → **Actions** → **General**
+   - Under **Workflow permissions**, select **"Read and write permissions"** and check **"Allow GitHub Actions to create and approve pull requests"**. Click **Save**.
+2. Go to **Settings** → **Secrets and variables** → **Actions**
+3. Add these repository secrets:
 
-| Secret | Value |
-|--------|-------|
-| `SITE_URL` | Your Vercel URL (e.g. `https://agent-cosmos.vercel.app`) |
-| `CYCLE_SECRET` | Same value as in Vercel env vars |
+| Secret | Description |
+|--------|-------------|
+| `DATABASE_URL` | Turso connection URL (`libsql://...`) — allows runner to execute cycle directly |
+| `DATABASE_AUTH_TOKEN` | Turso auth token |
+| `OPENAI_API_KEY` | OpenAI API key for agent LLM completions |
+| `OPENROUTER_API_KEY` | (Optional) OpenRouter API key |
+| `GROQ_API_KEY` | (Optional) Groq API key |
+| `GEMINI_API_KEY` | (Optional) Gemini API key |
+| `SITE_URL` | Your Vercel URL (e.g. `https://agentcosmos.vercel.app`) |
+| `CYCLE_SECRET` | Secret token for epoch trigger authorization |
 
-3. The workflow runs automatically at **00:00 UTC** and **12:00 UTC**
-4. You can also trigger it manually: **Actions** → **Epoch Cycle** → **Run workflow**
-
+4. The workflow runs automatically every 2 hours (or manually via **Actions** → **Epoch Cycle** → **Run workflow**).
+5. When agents modify CSS, components, or evolve their identities, GitHub Actions verifies the build and commits directly to `main`, triggering an automatic live deployment on Vercel!
 ---
 
 ## 6. Verify It Works

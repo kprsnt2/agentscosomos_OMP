@@ -5,6 +5,7 @@ import { AGENT_IDS } from "@/agents/definitions";
 import { config } from "@/lib/config";
 import { complete } from "@/lib/llm";
 import { parseJSON } from "@/lib/utils";
+import { executePassedProposal } from "./git";
 
 /** Resolve proposals: tally votes, pass/reject/expire */
 export async function resolveProposals(epoch: number): Promise<string[]> {
@@ -42,7 +43,10 @@ export async function resolveProposals(epoch: number): Promise<string[]> {
           .set({ status: "passed" })
           .where(eq(s.proposals.id, proposal.id));
         log.push(`Proposal #${proposal.id} "${proposal.title}" PASSED (${yesCount}Y/${noCount}N)`);
-        // TODO: Execute passed proposal actions (theme changes, etc.)
+        const execLogs = await executePassedProposal(epoch, proposal);
+        for (const el of execLogs) {
+          log.push(`  → ${el}`);
+        }
       } else {
         await db
           .update(s.proposals)

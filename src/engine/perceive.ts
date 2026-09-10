@@ -4,7 +4,7 @@ import * as s from "@/db/schema";
 import { type AgentId } from "@/agents/definitions";
 import { config } from "@/lib/config";
 import { truncateToTokens } from "@/lib/utils";
-
+import { getRecentCodeCommits } from "./git";
 export interface AgentContext {
   agentId: AgentId;
   epoch: number;
@@ -45,6 +45,8 @@ export interface AgentContext {
     sentiment: number;
     interactionCount: number;
   }>;
+  /** Recent codebase commits */
+  recentCommits: string[];
 }
 
 export async function buildContext(
@@ -168,5 +170,6 @@ export async function buildContext(
     memory: truncateToTokens(memory, config.memoryMaxTokens),
     suggestions: suggRows.map((s) => s.content),
     relationships: allRels,
+    recentCommits: getRecentCodeCommits(5),
   };
 }

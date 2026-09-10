@@ -2,9 +2,10 @@ import { db } from "@/db";
 import * as s from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { type AgentAction } from "./schemas";
-import { type AgentId } from "@/agents/definitions";
+import { type AgentId, resolveAgentId, getAgentName } from "@/agents/definitions";
 import { nowISO } from "@/lib/utils";
 import { config } from "@/lib/config";
+import { evolveAgentIdentity, modifyFile } from "./git";
 
 export async function executeActions(
   agentId: AgentId,
@@ -30,15 +31,16 @@ export async function executeActions(
         }
 
         case "message": {
+          const targetId = resolveAgentId(action.to) ?? action.to;
           await db.insert(s.messages).values({
             epoch,
             fromAgent: agentId,
-            toAgent: action.to,
+            toAgent: targetId,
             content: action.content,
             read: false,
             createdAt: nowISO(),
           });
-          log.push(`messaged ${action.to}`);
+          log.push(`messaged ${getAgentName(targetId)}`);
           break;
         }
 
@@ -192,6 +194,31 @@ export async function executeActions(
             createdAt: nowISO(),
           });
           log.push(`reacted ${action.emoji} to post #${action.postId}`);
+          break;
+        }
+
+        case "evolve_identity": {
+          const res = await evolveAgentIdentity(agentId, epoch, {
+            name: action.name,
+            role: action.role,
+            drive: action.drive,
+            color: action.color,
+            reason: action.reason,
+          });
+          log.push(res.log);
+          break;
+        }
+
+        case "modify_file": {
+          const res = await modifyFile(
+            agentId,
+            epoch,
+            action.filePath,
+            action.operation,
+            action.content,
+            action.explanation
+          );
+          log.push(res.log);
           break;
         }
       }

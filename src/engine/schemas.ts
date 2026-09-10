@@ -18,7 +18,14 @@ export const ProposeAction = z.object({
   action: z.literal("propose"),
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(1000),
-  actionType: z.enum(["theme_change", "create_page", "modify_void", "custom"]),
+  actionType: z.enum([
+    "theme_change",
+    "create_page",
+    "modify_void",
+    "code_change",
+    "identity_change",
+    "custom",
+  ]),
   actionPayload: z.union([z.string(), z.record(z.unknown())]).transform((v) =>
     typeof v === "string" ? v : JSON.stringify(v)
   ).default("{}"),
@@ -60,6 +67,23 @@ export const ReactAction = z.object({
   emoji: z.string().min(1).max(4),
 });
 
+export const EvolveIdentityAction = z.object({
+  action: z.literal("evolve_identity"),
+  name: z.string().min(1).max(50).optional(),
+  role: z.string().min(1).max(50).optional(),
+  drive: z.string().min(1).max(300).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  reason: z.string().max(300).optional(),
+});
+
+export const ModifyFileAction = z.object({
+  action: z.literal("modify_file"),
+  filePath: z.string().min(1).max(150),
+  operation: z.enum(["write", "append"]),
+  content: z.string().min(1).max(10000),
+  explanation: z.string().min(1).max(300),
+});
+
 // ── Combined agent turn output ──────────────────────────────────────────────
 
 export const AgentAction = z.discriminatedUnion("action", [
@@ -72,6 +96,8 @@ export const AgentAction = z.discriminatedUnion("action", [
   CreatePageAction,
   UpdateMemoryAction,
   ReactAction,
+  EvolveIdentityAction,
+  ModifyFileAction,
 ]);
 
 export type AgentAction = z.infer<typeof AgentAction>;

@@ -261,18 +261,17 @@ Respond ONLY with a valid JSON object. No markdown fences. No extra text.`,
 };
 
 export function getPrompt(agentId: AgentId): string {
-  // First check bundled prompt
-  if (AGENT_PROMPTS[agentId]) {
-    return AGENT_PROMPTS[agentId];
-  }
-
-  // Fallback to disk read
+  // Check disk read first so agent-modified prompt files take immediate effect
   try {
     return readFileSync(
       join(process.cwd(), "src", "agents", "prompts", `${agentId}.md`),
       "utf-8"
     );
   } catch {
+    // Fallback to bundled prompt
+    if (AGENT_PROMPTS[agentId]) {
+      return AGENT_PROMPTS[agentId];
+    }
     const agent = AGENTS[agentId];
     return `You are ${agent.name}, ${agent.role}. Your core drive: ${agent.drive}.`;
   }
