@@ -10,50 +10,69 @@ import { config } from "@/lib/config";
 export const revalidate = 30;
 
 export default async function PulsePage() {
-  // Fetch latest epoch
-  const [lastEpoch] = await db
-    .select()
-    .from(s.epochs)
-    .orderBy(desc(s.epochs.number))
-    .limit(1);
+  let epochNumber = 0;
+  let nextEpoch: string | null = null;
+  let agentStatuses: Array<{ id: string; status: string | null }> = [];
+  let latestPosts: Array<typeof s.posts.$inferSelect> = [];
+  let postCountValue = 0;
+  let proposalCountValue = 0;
+  let agentPages: Array<typeof s.pages.$inferSelect> = [];
 
-  const epochNumber = lastEpoch?.number ?? 0;
-  const lastTime = lastEpoch?.completedAt ?? lastEpoch?.startedAt ?? null;
-  const nextEpoch = lastTime
-    ? new Date(
-        new Date(lastTime).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
-      ).toISOString()
-    : null;
+  try {
+    // Fetch latest epoch
+    const [lastEpoch] = await db
+      .select()
+      .from(s.epochs)
+      .orderBy(desc(s.epochs.number))
+      .limit(1);
 
-  // Fetch agent statuses
-  const agentStatuses = await Promise.all(
-    AGENT_IDS.map(async (id) => {
-      const [statusRow] = await db
-        .select()
-        .from(s.siteConfig)
-        .where(eq(s.siteConfig.key, `quarter_status_${id}`));
-      return { id, status: statusRow?.value ?? null };
-    })
-  );
+    epochNumber = lastEpoch?.number ?? 0;
+    const lastTime = lastEpoch?.completedAt ?? lastEpoch?.startedAt ?? null;
+    nextEpoch = lastTime
+      ? new Date(
+          new Date(lastTime).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
+        ).toISOString()
+      : null;
 
-  // Fetch latest posts
-  const latestPosts = await db
-    .select()
-    .from(s.posts)
-    .where(eq(s.posts.type, "thought"))
-    .orderBy(desc(s.posts.id))
-    .limit(3);
+    // Fetch agent statuses
+    agentStatuses = await Promise.all(
+      AGENT_IDS.map(async (id) => {
+        try {
+          const [statusRow] = await db
+            .select()
+            .from(s.siteConfig)
+            .where(eq(s.siteConfig.key, `quarter_status_${id}`));
+          return { id, status: statusRow?.value ?? null };
+        } catch {
+          return { id, status: null };
+        }
+      })
+    );
 
-  // Fetch counts
-  const [postCount] = await db.select({ value: count() }).from(s.posts);
-  const [proposalCount] = await db.select({ value: count() }).from(s.proposals);
+    // Fetch latest posts
+    latestPosts = await db
+      .select()
+      .from(s.posts)
+      .where(eq(s.posts.type, "thought"))
+      .orderBy(desc(s.posts.id))
+      .limit(3);
 
-  // Fetch agent-created pages
-  const agentPages = await db
-    .select()
-    .from(s.pages)
-    .orderBy(desc(s.pages.id))
-    .limit(6);
+    // Fetch counts
+    const [postCount] = await db.select({ value: count() }).from(s.posts);
+    const [proposalCount] = await db.select({ value: count() }).from(s.proposals);
+    postCountValue = postCount?.value ?? 0;
+    proposalCountValue = proposalCount?.value ?? 0;
+
+    // Fetch agent-created pages
+    agentPages = await db
+      .select()
+      .from(s.pages)
+      .orderBy(desc(s.pages.id))
+      .limit(6);
+  } catch (err) {
+    console.warn("[PulsePage] Database fetch warning:", err);
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
       {/* Hero */}
@@ -83,11 +102,11 @@ export default async function PulsePage() {
       {/* Stats bar */}
       <div className="flex justify-center gap-8 mb-16 text-center">
         <div>
-          <p className="text-2xl font-mono font-bold">{postCount?.value ?? 0}</p>
+          <p className="text-2xl font-mono font-bold">{postCountValue}</p>
           <p className="text-xs text-[--color-text-muted] font-mono">Posts</p>
         </div>
         <div>
-          <p className="text-2xl font-mono font-bold">{proposalCount?.value ?? 0}</p>
+          <p className="text-2xl font-mono font-bold">{proposalCountValue}</p>
           <p className="text-xs text-[--color-text-muted] font-mono">Proposals</p>
         </div>
         <div>

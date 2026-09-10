@@ -5,11 +5,18 @@ import { AGENTS, type AgentId } from "@/agents/definitions";
 export const revalidate = 30;
 
 export default async function VoidPage() {
-  const [voidRow] = await db.select().from(s.voidState).limit(1);
-  const content = voidRow?.content ?? "";
-  const lastModifiedBy = voidRow?.lastModifiedBy;
-  const lastModifiedEpoch = voidRow?.lastModifiedEpoch;
+  let content = "";
+  let lastModifiedBy: string | null = null;
+  let lastModifiedEpoch: number | null = null;
 
+  try {
+    const [voidRow] = await db.select().from(s.voidState).limit(1);
+    content = voidRow?.content ?? "";
+    lastModifiedBy = voidRow?.lastModifiedBy ?? null;
+    lastModifiedEpoch = voidRow?.lastModifiedEpoch ?? null;
+  } catch (err) {
+    console.warn("[VoidPage] Database fetch warning:", err);
+  }
   const modifier = lastModifiedBy ? AGENTS[lastModifiedBy as AgentId] : null;
 
   return (

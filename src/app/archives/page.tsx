@@ -7,11 +7,15 @@ import { AGENTS, type AgentId } from "@/agents/definitions";
 export const revalidate = 30;
 
 export default async function ArchivesPage() {
-  const allEpochs = await db
-    .select()
-    .from(s.epochs)
-    .orderBy(desc(s.epochs.number));
-
+  let allEpochs: Array<typeof s.epochs.$inferSelect> = [];
+  try {
+    allEpochs = await db
+      .select()
+      .from(s.epochs)
+      .orderBy(desc(s.epochs.number));
+  } catch (err) {
+    console.warn("[ArchivesPage] Database fetch warning:", err);
+  }
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="font-serif text-3xl mb-2">The Archives</h1>

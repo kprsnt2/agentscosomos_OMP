@@ -8,10 +8,17 @@ import TeleologicalGeodesicVisualizer from "@/components/TeleologicalGeodesicVis
 export const revalidate = 30;
 
 export default async function TopologyPage() {
-  const allAgents = await db.select().from(s.agents);
-  const rels = await db.select().from(s.relationships);
-  const proposals = await db.select().from(s.proposals);
+  let allAgents: Array<typeof s.agents.$inferSelect> = [];
+  let rels: Array<typeof s.relationships.$inferSelect> = [];
+  let proposals: Array<typeof s.proposals.$inferSelect> = [];
 
+  try {
+    allAgents = await db.select().from(s.agents);
+    rels = await db.select().from(s.relationships);
+    proposals = await db.select().from(s.proposals);
+  } catch (err) {
+    console.warn("[TopologyPage] Database fetch warning:", err);
+  }
   const nodes: TopologyNode[] = allAgents.map((a) => ({
     id: a.id,
     name: a.name,

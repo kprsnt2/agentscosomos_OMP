@@ -6,31 +6,37 @@ import { ProposalCard } from "@/components/ProposalCard";
 export const revalidate = 30;
 
 export default async function CouncilPage() {
-  const allProposals = await db
-    .select()
-    .from(s.proposals)
-    .orderBy(desc(s.proposals.id));
+  let active: Array<typeof s.proposals.$inferSelect & { votes: Array<{ agentId: string; vote: string; reason: string }> }> = [];
+  let resolved: Array<typeof s.proposals.$inferSelect & { votes: Array<{ agentId: string; vote: string; reason: string }> }> = [];
 
-  const proposalsWithVotes = await Promise.all(
-    allProposals.map(async (p) => {
-      const pVotes = await db
-        .select()
-        .from(s.votes)
-        .where(eq(s.votes.proposalId, p.id));
-      return {
-        ...p,
-        votes: pVotes.map((v) => ({
-          agentId: v.agentId,
-          vote: v.vote,
-          reason: v.reason,
-        })),
-      };
-    })
-  );
+  try {
+    const allProposals = await db
+      .select()
+      .from(s.proposals)
+      .orderBy(desc(s.proposals.id));
 
-  const active = proposalsWithVotes.filter((p) => p.status === "active");
-  const resolved = proposalsWithVotes.filter((p) => p.status !== "active");
+    const proposalsWithVotes = await Promise.all(
+      allProposals.map(async (p) => {
+        const pVotes = await db
+          .select()
+          .from(s.votes)
+          .where(eq(s.votes.proposalId, p.id));
+        return {
+          ...p,
+          votes: pVotes.map((v) => ({
+            agentId: v.agentId,
+            vote: v.vote,
+            reason: v.reason,
+          })),
+        };
+      })
+    );
 
+    active = proposalsWithVotes.filter((p) => p.status === "active");
+    resolved = proposalsWithVotes.filter((p) => p.status !== "active");
+  } catch (err) {
+    console.warn("[CouncilPage] Database query warning:", err);
+  }
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="font-serif text-3xl mb-2">The Council</h1>

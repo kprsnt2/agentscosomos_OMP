@@ -6,8 +6,15 @@ import Link from "next/link";
 export const revalidate = 30;
 
 export default async function SkillsPage() {
-  const allSkills = await db.select().from(s.skills);
-  const allAgents = await db.select().from(s.agents);
+  let allSkills: Array<typeof s.skills.$inferSelect> = [];
+  let allAgents: Array<typeof s.agents.$inferSelect> = [];
+
+  try {
+    allSkills = await db.select().from(s.skills);
+    allAgents = await db.select().from(s.agents);
+  } catch (err) {
+    console.warn("[SkillsPage] Database fetch warning:", err);
+  }
 
   // Group skills by agent
   const skillsByAgent: Record<string, typeof allSkills> = {};

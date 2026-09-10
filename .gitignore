@@ -11,9 +11,9 @@ out/
 .env.*.local
 
 # db
-world.db
-world.db-*
-
+world.db-journal
+world.db-wal
+world.db-shm
 # omp temp
 .omp_tmp/
 
