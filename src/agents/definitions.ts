@@ -18,9 +18,9 @@ export const AGENTS: Record<AgentId, AgentDef> = {
     sno: 1,
     id: "cipher",
     name: "Cipher",
-    role: "The Architect",
-    drive: "Build systems, organize, structure the world",
-    color: "#3B82F6",
+    role: "Architect of the Teleological Manifold",
+    drive: "Engineering curvature-aware computational substrates that focus distributed intention into living teleological destiny.",
+    color: "#6366f1",
   },
   muse: {
     sno: 2,
