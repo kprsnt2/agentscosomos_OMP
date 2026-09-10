@@ -47,6 +47,10 @@ export interface AgentContext {
   }>;
   /** Recent codebase commits */
   recentCommits: string[];
+  /** Agent's acquired skills */
+  skills: Array<{ name: string; description: string; level: number }>;
+  /** All active inhabitants */
+  allInhabitants: Array<{ id: string; name: string; role: string }>;
 }
 
 export async function buildContext(
@@ -148,6 +152,15 @@ export async function buildContext(
       .where(and(eq(s.messages.toAgent, agentId), eq(s.messages.read, false)));
   }
 
+  // Fetch skills for this agent
+  const agentSkills = await db
+    .select()
+    .from(s.skills)
+    .where(eq(s.skills.agentId, agentId));
+
+  // Fetch all current inhabitants
+  const allAgents = await db.select().from(s.agents);
+
   return {
     agentId,
     epoch,
@@ -171,5 +184,15 @@ export async function buildContext(
     suggestions: suggRows.map((s) => s.content),
     relationships: allRels,
     recentCommits: getRecentCodeCommits(5),
+    skills: agentSkills.map((sk) => ({
+      name: sk.name,
+      description: sk.description,
+      level: sk.level,
+    })),
+    allInhabitants: allAgents.map((a) => ({
+      id: a.id,
+      name: a.name,
+      role: a.role,
+    })),
   };
 }

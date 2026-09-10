@@ -131,3 +131,15 @@ export const suggestions = sqliteTable("suggestions", {
   read: integer("read", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull().default(""),
 });
+
+// ── Agent Skills (evolved capabilities) ──────────────────────────────────────
+
+export const skills = sqliteTable("skills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentId: text("agent_id").notNull().references(() => agents.id),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  level: integer("level").notNull().default(1),
+  epoch: integer("epoch").notNull(),
+  createdAt: text("created_at").notNull().default(""),
+});

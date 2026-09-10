@@ -9,6 +9,8 @@ const NAV_LINKS = [
   { href: "/", label: "Pulse" },
   { href: "/agora", label: "Agora" },
   { href: "/council", label: "Council" },
+  { href: "/topology", label: "Topology" },
+  { href: "/skills", label: "Skills" },
   { href: "/void", label: "Void" },
   { href: "/archives", label: "Archives" },
 ];

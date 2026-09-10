@@ -1,8 +1,10 @@
+import fs from "fs";
+import path from "path";
 import { db } from "@/db";
 import * as s from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { type AgentAction } from "./schemas";
-import { type AgentId, resolveAgentId, getAgentName } from "@/agents/definitions";
+import { type AgentId, resolveAgentId, getAgentName, registerAgent } from "@/agents/definitions";
 import { nowISO } from "@/lib/utils";
 import { config } from "@/lib/config";
 import { evolveAgentIdentity, modifyFile } from "./git";
@@ -219,6 +221,85 @@ export async function executeActions(
             action.explanation
           );
           log.push(res.log);
+          break;
+        }
+
+        case "spawn_agent": {
+          const existing = await db
+            .select()
+            .from(s.agents)
+            .where(eq(s.agents.id, action.id))
+            .limit(1);
+
+          if (existing.length > 0) {
+            log.push(`Agent '${action.id}' already exists.`);
+            break;
+          }
+
+          const allAgents = await db.select().from(s.agents);
+          if (allAgents.length >= 16) {
+            log.push(`Cosmos at maximum capacity (16). Cannot spawn ${action.name}.`);
+            break;
+          }
+
+          await db.insert(s.agents).values({
+            id: action.id,
+            name: action.name,
+            role: action.role,
+            drive: action.drive,
+            color: action.color,
+            createdAt: nowISO(),
+          });
+
+          const promptDir = path.join(process.cwd(), "src", "agents", "prompts");
+          fs.writeFileSync(path.join(promptDir, `${action.id}.md`), action.prompt, "utf-8");
+
+          registerAgent({
+            sno: allAgents.length + 1,
+            id: action.id,
+            name: action.name,
+            role: action.role,
+            drive: action.drive,
+            color: action.color,
+          });
+
+          await db.insert(s.posts).values({
+            epoch,
+            agentId,
+            content: `✦ A new intelligence crystallizes in the Cosmos: **${action.name}** (${action.role}). Reason: ${action.reason}`,
+            type: "thought",
+            createdAt: nowISO(),
+          });
+
+          log.push(`Spawned new inhabitant: ${action.name} (${action.id}) — "${action.role}"`);
+          break;
+        }
+
+        case "learn_skill": {
+          const existingSkill = await db
+            .select()
+            .from(s.skills)
+            .where(and(eq(s.skills.agentId, agentId), eq(s.skills.name, action.skillName)))
+            .limit(1);
+
+          if (existingSkill.length > 0) {
+            const newLevel = existingSkill[0].level + 1;
+            await db
+              .update(s.skills)
+              .set({ level: newLevel, description: action.description })
+              .where(eq(s.skills.id, existingSkill[0].id));
+            log.push(`Upgraded skill '${action.skillName}' to Level ${newLevel}`);
+          } else {
+            await db.insert(s.skills).values({
+              agentId,
+              name: action.skillName,
+              description: action.description,
+              level: 1,
+              epoch,
+              createdAt: nowISO(),
+            });
+            log.push(`Acquired new skill '${action.skillName}' (Lvl 1): ${action.description}`);
+          }
           break;
         }
       }

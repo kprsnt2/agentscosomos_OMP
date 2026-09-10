@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import * as s from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
-import { AGENT_IDS, type AgentId } from "@/agents/definitions";
+import { AGENT_IDS, registerAgent, type AgentId } from "@/agents/definitions";
 import { nowISO, shuffle } from "@/lib/utils";
 import { buildContext } from "./perceive";
 import { think } from "./think";
@@ -31,9 +31,24 @@ export async function runEpoch(): Promise<{
   log.push(`═══ EPOCH ${epoch} BEGINS ═══`);
   log.push(`Started at ${nowISO()}`);
 
-  // Randomize agent order
+  // Dynamically sync all active agents from database
+  const dbAgents = await db.select().from(s.agents);
+  for (let i = 0; i < dbAgents.length; i++) {
+    const a = dbAgents[i];
+    registerAgent({
+      sno: i + 1,
+      id: a.id,
+      name: a.name,
+      role: a.role,
+      drive: a.drive,
+      color: a.color,
+    });
+  }
+
+  // Randomize agent order with all active inhabitants
   const agentOrder = shuffle([...AGENT_IDS]);
-  log.push(`Agent order: ${agentOrder.join(", ")}`);
+  log.push(`Active inhabitants: ${AGENT_IDS.length} (${AGENT_IDS.join(", ")})`);
+  log.push(`Agent turn order: ${agentOrder.join(", ")}`);
 
   // Record epoch start
   await db.insert(s.epochs).values({

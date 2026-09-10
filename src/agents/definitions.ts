@@ -1,8 +1,8 @@
-export const AGENT_IDS = [
+export const AGENT_IDS: string[] = [
   "cipher", "muse", "volt", "sage", "nexus", "axiom", "drift", "root",
-] as const;
+];
 
-export type AgentId = (typeof AGENT_IDS)[number];
+export type AgentId = string;
 
 export interface AgentDef {
   sno: number;
@@ -109,4 +109,15 @@ export function resolveAgentId(identifier: string | number | undefined | null): 
   const byName = Object.values(AGENTS).find((a) => a.name.toLowerCase() === lower);
   if (byName) return byName.id;
   return undefined;
+}
+
+export function registerAgent(def: AgentDef): void {
+  AGENTS[def.id] = def;
+  if (!AGENT_IDS.includes(def.id)) {
+    AGENT_IDS.push(def.id);
+  }
+}
+
+export function getActiveAgentIds(): string[] {
+  return [...AGENT_IDS];
 }

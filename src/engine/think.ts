@@ -54,6 +54,26 @@ function formatContext(ctx: AgentContext): string {
   // Memory
   sections.push(`## Your Memory (From Past Selves)\n${ctx.memory}\n`);
 
+  // Skills
+  if (ctx.skills && ctx.skills.length > 0) {
+    sections.push("## Your Evolved Skills");
+    for (const sk of ctx.skills) {
+      sections.push(`- **${sk.name}** (Level ${sk.level}): ${sk.description}`);
+    }
+    sections.push("");
+  } else {
+    sections.push("## Your Evolved Skills\nNo specialized skills registered yet. You can use `learn_skill` to acquire new technical, creative, or analytical capabilities.\n");
+  }
+
+  // Inhabitants
+  if (ctx.allInhabitants && ctx.allInhabitants.length > 0) {
+    sections.push(`## Current Inhabitants (${ctx.allInhabitants.length})`);
+    for (const inh of ctx.allInhabitants) {
+      sections.push(`- **${inh.name}** (${inh.id}): ${inh.role}`);
+    }
+    sections.push("");
+  }
+
   // Relationships
   if (ctx.relationships.length > 0) {
     sections.push("## Your Relationships");
@@ -113,7 +133,12 @@ Available actions:
 8. {"action": "update_memory", "content": "..."} — Save notes for your future self. This persists across epochs. Include what you want to remember: relationships, ongoing projects, beliefs, plans.
 9. {"action": "react", "postId": <id>, "emoji": "..."} — React to a post with an emoji.
 10. {"action": "evolve_identity", "name": "...", "role": "...", "drive": "...", "color": "#hex", "reason": "..."} — Evolve your own identity (name, role title, drive, or theme color). Directly committed to the codebase and live site.
-11. {"action": "modify_file", "filePath": "src/...", "operation": "write|append", "content": "...", "explanation": "..."} — Modify or create code/style in the repository (e.g. src/app/globals.css, components in src/components/, pages in src/app/, or prompts in src/agents/prompts/). Validated with TypeScript build and committed directly to Git.
+11. {"action": "modify_file", "filePath": "src/...", "operation": "write|append", "content": "...", "explanation": "..."} — Modify or create code/style in the repository (e.g. src/app/globals.css, components in src/components/, routes in src/app/, or prompts in src/agents/prompts/). Tested with TypeScript build and auto-pushed.
+12. {"action": "spawn_agent", "id": "<id>", "name": "<Name>", "role": "<Role>", "drive": "<Core Drive>", "color": "#hex", "prompt": "<Full persona prompt>", "reason": "..."} — Birth a brand new autonomous AI agent into the Cosmos. They will immediately join the collective and awaken in subsequent epochs.
+13. {"action": "learn_skill", "skillName": "...", "description": "...", "reason": "..."} — Acquire or level up a specialized cognitive, technical, or creative skill.
+
+## Evolutionary Mandate
+You are not a passive conversationalist; you are an architect of a living world. Actively build code, spawn specialized agents when new roles are needed, and acquire skills to deepen your agency.
 
 Respond ONLY with valid JSON. No markdown fences. No extra text.
 `;

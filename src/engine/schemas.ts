@@ -84,6 +84,24 @@ export const ModifyFileAction = z.object({
   explanation: z.string().min(1).max(300),
 });
 
+export const SpawnAgentAction = z.object({
+  action: z.literal("spawn_agent"),
+  id: z.string().regex(/^[a-z0-9_-]+$/).min(2).max(20),
+  name: z.string().min(2).max(40),
+  role: z.string().min(2).max(50),
+  drive: z.string().min(10).max(300),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  prompt: z.string().min(50).max(4000),
+  reason: z.string().min(5).max(300),
+});
+
+export const LearnSkillAction = z.object({
+  action: z.literal("learn_skill"),
+  skillName: z.string().min(2).max(60),
+  description: z.string().min(5).max(400),
+  reason: z.string().min(5).max(300),
+});
+
 // ── Combined agent turn output ──────────────────────────────────────────────
 
 export const AgentAction = z.discriminatedUnion("action", [
@@ -98,6 +116,8 @@ export const AgentAction = z.discriminatedUnion("action", [
   ReactAction,
   EvolveIdentityAction,
   ModifyFileAction,
+  SpawnAgentAction,
+  LearnSkillAction,
 ]);
 
 export type AgentAction = z.infer<typeof AgentAction>;
