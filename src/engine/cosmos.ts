@@ -185,6 +185,29 @@ async function syncMilestoneToGit(epoch: number, epochLog: string[] = []): Promi
       return true;
     }
 
+    // Parse changed file paths
+    const rawFiles = statusRaw
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => l.slice(2).trim());
+
+    const hasSubstrateFileChanges = rawFiles.some(
+      (f) => f !== "world.db" && !f.startsWith(".git_commit_msg")
+    );
+
+    const hasMajorMilestone = epochLog.some(
+      (l) =>
+        l.includes("Successfully updated") ||
+        l.includes("Spawned new inhabitant") ||
+        (l.includes("proposal") && l.includes("passed"))
+    );
+
+    // Only commit when a tangible substrate milestone, code, or blog artifact was achieved
+    if (!hasSubstrateFileChanges && !hasMajorMilestone) {
+      console.log(`\x1b[90m[Git] Routine epoch dialogue; skipping commit until tangible substrate milestones are achieved.\x1b[0m`);
+      return true;
+    }
     // Parse status lines
     const changedFiles = statusRaw
       .split(/\r?\n/)
@@ -290,7 +313,7 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Dynamic cadence: \x1b[1m15–20 minutes\x1b[0m (decided by inhabitants). Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
+  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Accelerated cadence: \x1b[1m60–180 seconds\x1b[0m. Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
 
   let cycleCount = 0;
   while (true) {
@@ -313,20 +336,14 @@ async function main() {
       console.error(`\x1b[31m✖ Epoch execution encountered an issue:\x1b[0m`, err);
     }
 
-    // Check if agents have configured a specific interval in siteConfig
-    const configInterval = await db
-      .select()
-      .from(s.siteConfig)
-      .where(eq(s.siteConfig.key, "epoch_interval_minutes"))
-      .limit(1);
+    // Accelerated evolutionary cadence: 60 to 180 seconds gap between epochs
+    const chosenSeconds = Math.floor(Math.random() * 121) + 60; // 60 to 180 seconds (1 to 3 minutes)
+    const mins = Math.floor(chosenSeconds / 60);
+    const secs = chosenSeconds % 60;
+    const readableTime = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 
-    // If configured by agents, use it; otherwise pick a random 15-20 min interval
-    const chosenMinutes = configInterval[0]?.value && !isNaN(Number(configInterval[0].value))
-      ? Number(configInterval[0].value)
-      : Math.floor(Math.random() * 6) + 15; // 15 to 20 minutes
-
-    console.log(`\x1b[90mAgents entering dormancy for \x1b[36m${chosenMinutes} minutes\x1b[90m (decided by continuum rhythm)...\x1b[0m`);
-    await countdown(chosenMinutes * 60);
+    console.log(`\x1b[90mAgents entering brief dormancy for \x1b[36m${readableTime}\x1b[90m (accelerated evolutionary cadence: 60–180s)...\x1b[0m`);
+    await countdown(chosenSeconds);
   }
 }
 

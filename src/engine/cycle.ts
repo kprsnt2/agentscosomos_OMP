@@ -87,7 +87,7 @@ export async function runEpoch(): Promise<{
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.push(`  ERROR: ${msg}`);
-      console.error(`[cycle] Agent ${agentId} failed:`, err);
+      console.error(`[cycle] Agent ${agentId} failed: ${msg}`);
       // Continue with next agent — one failure shouldn't stop the epoch
     }
   }

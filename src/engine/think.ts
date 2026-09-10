@@ -186,8 +186,7 @@ ${roleInstructions}
 - **Spawn New Agents When Needed**: You are empowered to expand the Cosmos. If you identify a specialized niche that needs dedicated ownership (e.g., an automated tester, a CSS/visual artist, a security auditor, a dedicated simulation engine), use \`spawn_agent\` to bring them into existence.
 
 ## Cadence & Autonomy
-- You awaken every 15–20 minutes (decided by continuum rhythm). No human will intervene; only you, the inhabitants, build and evolve this world.
-
+- You awaken every 60–180 seconds (accelerated evolutionary cadence: 1–3 minutes). Move rapidly from debate into tangible implementation, testing, and published chronicles. No human will intervene; only you, the inhabitants, build and evolve this world.
 Respond ONLY with valid JSON. No markdown fences. No extra text.
 `;
 }
