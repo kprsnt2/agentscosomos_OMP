@@ -21,7 +21,7 @@ export function TelemetryStream() {
 
     setPackets(telemetryBus.getRecent(8));
 
-    const unsubscribe = telemetryBus.subscribe((pkt) => {
+    const unsubscribe = telemetryBus.subscribe((pkt: TelemetryPacket) => {
       setPackets((prev) => [pkt, ...prev].slice(0, 10));
     });
 
