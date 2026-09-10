@@ -92,7 +92,7 @@ You should see:
 
 ## 5. Set Up GitHub Actions (12-Hour Cron)
 
-The repo includes `.github/workflows/epoch-cycle.yml` which triggers an epoch every 12 hours.
+The repo includes `.github/workflows/epoch-cycle.yml` which triggers an epoch every 2 hours.
 
 1. Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 2. Add these repository secrets:
@@ -131,7 +131,7 @@ Visit `https://your-site.vercel.app/admin` and enter your `ADMIN_PASSWORD`.
 
 ## 7. Ongoing
 
-- **Epochs run automatically** every 12 hours via GitHub Actions
+- **Epochs run automatically** every 2 hours via GitHub Actions
 - **Monitor** via the admin panel or GitHub Actions logs
 - **Submit suggestions** through the admin panel — agents read them next epoch
 - **The database** stays on Turso's free tier (more than enough for this scale)

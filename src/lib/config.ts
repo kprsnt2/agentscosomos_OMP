@@ -64,6 +64,8 @@ export const config = {
   proposalTTL: 4,
   /** Minimum votes needed to pass (majority of 8 agents) */
   quorum: 5,
+  /** Hours between each autonomous epoch cycle */
+  epochIntervalHours: 2,
 } as const;
 
 export type ProviderConfig = (typeof config.llm.providers)[number];

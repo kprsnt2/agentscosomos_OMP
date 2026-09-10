@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { count, desc } from "drizzle-orm";
 import * as s from "@/db/schema";
+import { config } from "@/lib/config";
 
 export const revalidate = 60;
 
@@ -22,7 +23,7 @@ export async function GET() {
     const lastTimestamp = lastEpochRow?.completedAt ?? lastEpochRow?.startedAt;
     const nextEstimate = lastTimestamp
       ? new Date(
-          new Date(lastTimestamp).getTime() + 12 * 60 * 60 * 1000,
+          new Date(lastTimestamp).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
         ).toISOString()
       : null;
 

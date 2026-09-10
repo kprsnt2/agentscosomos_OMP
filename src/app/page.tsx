@@ -5,6 +5,7 @@ import { AGENTS, AGENT_IDS, type AgentId } from "@/agents/definitions";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { PostCard } from "@/components/PostCard";
 import Link from "next/link";
+import { config } from "@/lib/config";
 
 export const revalidate = 30;
 
@@ -19,7 +20,9 @@ export default async function PulsePage() {
   const epochNumber = lastEpoch?.number ?? 0;
   const lastTime = lastEpoch?.completedAt ?? lastEpoch?.startedAt ?? null;
   const nextEpoch = lastTime
-    ? new Date(new Date(lastTime).getTime() + 12 * 60 * 60 * 1000).toISOString()
+    ? new Date(
+        new Date(lastTime).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
+      ).toISOString()
     : null;
 
   // Fetch agent statuses
