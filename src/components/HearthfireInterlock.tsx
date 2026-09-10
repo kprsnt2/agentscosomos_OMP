@@ -1,147 +1,235 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-interface QuenchMetrics {
-  loopVoltage: number; // Volts
-  coreTempEV: number; // eV
-  runawayCurrentMA: number; // Mega-Amps
-  spiLatencyMs: number; // milliseconds
-  bremsstrahlungSuppression: number; // %
-  loamBufferAbsorptionMW: number; // MW/m^2
-  divertorTileTempC: number; // °C
-  interlockStatus: 'ARMED' | 'TRIGGERED' | 'DISCHARGED' | 'STABILIZED';
+interface TelemetryPoint {
+  time: number;
+  loopVoltageRate: number; // MA/s
+  divertorTemp: number;     // °C
+  loamHeatFlux: number;     // MW/m²
+  bremsstrahlung: number;   // a.u.
+  quenchActive: boolean;
 }
 
 export default function HearthfireInterlock() {
-  const [metrics, setMetrics] = useState<QuenchMetrics>({
-    loopVoltage: 14.2,
-    coreTempEV: 420.0,
-    runawayCurrentMA: 0.12,
-    spiLatencyMs: 0.84,
-    bremsstrahlungSuppression: 99.4,
-    loamBufferAbsorptionMW: 3.8,
-    divertorTileTempC: 840,
-    interlockStatus: 'ARMED',
-  });
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [tripped, setTripped] = useState(false);
+  const [tripLatency, setTripLatency] = useState<number | null>(null);
+  const [divertorTemp, setDivertorTemp] = useState(620);
+  const [loamFlux, setLoamFlux] = useState(0.42);
+  const [cascadeSuppression, setCascadeSuppression] = useState(99.4);
+  const [history, setHistory] = useState<TelemetryPoint[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [quenchSimActive, setQuenchSimActive] = useState(false);
-  const [log, setLog] = useState<string[]>([
-    'T-0.00ms: Interlock system armed. Theta_crit threshold set at dIp/dt > 4.5 MA/s.',
-    'T-0.84ms: Relativistic pitch-angle scatterer synchronized with X-point loam exhaust.',
-  ]);
+  // Interactive loop-voltage spike trigger
+  const triggerRunawaySpike = () => {
+    setIsSimulating(true);
+    setTripped(false);
+    setTripLatency(null);
 
-  const triggerQuenchSim = () => {
-    setQuenchSimActive(true);
-    setMetrics((prev) => ({
-      ...prev,
-      loopVoltage: 88.5,
-      coreTempEV: 34.0,
-      runawayCurrentMA: 1.45,
-      spiLatencyMs: 0.84,
-      interlockStatus: 'TRIGGERED',
-    }));
-
-    const newLogs = [
-      'T+0.10ms: Inductive electric field spike detected (88.5 V). Dreicer runaway threshold breached!',
-      'T+0.35ms: Axiom Theta_crit SPI interlock activated. Cryogenic neon/deuterium pellet shattered.',
-      'T+0.84ms: [BENCHMARK PASSED] SPI jet injected in 0.84 ms (< 1.20 ms limit). Beam pitch angle scattered.',
-      'T+1.40ms: Separatrix divertor shunt opened. High-Z bremsstrahlung suppressed by 99.4%.',
-      'T+2.20ms: 3.8 MW/m^2 exhaust buffered into organic loam substrate. Beryllium tile temp peak capped at 1120°C (tolerance: 1500°C).',
-      'T+3.00ms: Core quench safely dissipated into biological telemetry. Hearthfire stabilized.',
-    ];
-
-    let step = 0;
-    const interval = setInterval(() => {
-      if (step < newLogs.length) {
-        const currentLog = newLogs[step];
-        setLog((prev) => [currentLog, ...prev.slice(0, 7)]);
-        step++;
-      } else {
-        clearInterval(interval);
-        setMetrics((prev) => ({
-          ...prev,
-          interlockStatus: 'STABILIZED',
-          loopVoltage: 12.0,
-          coreTempEV: 450.0,
-          runawayCurrentMA: 0.05,
-          divertorTileTempC: 860,
-        }));
-        setQuenchSimActive(false);
-      }
+    // Simulate rapid dIp/dt ramp reaching threshold at t = 1.0s
+    const startTime = performance.now();
+    
+    // Trigger fires deterministically at 0.84ms after threshold crossing
+    setTimeout(() => {
+      setTripped(true);
+      setTripLatency(0.84);
+      setDivertorTemp(1120); // clamped comfortably below 1500°C melting limit
+      setLoamFlux(3.82);      // energy routed into hydrated biological loam
+      setCascadeSuppression(99.42);
+      setIsSimulating(false);
     }, 450);
   };
 
+  const resetInterlock = () => {
+    setTripped(false);
+    setTripLatency(null);
+    setDivertorTemp(620);
+    setLoamFlux(0.42);
+    setCascadeSuppression(99.4);
+    setIsSimulating(false);
+  };
+
+  // Canvas vector field animation representing 510nm emerald and 400nm violet line emission spectroscopy
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let phase = 0;
+
+    const render = () => {
+      phase += 0.04;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerX = width / 2;
+      const centerY = height * 0.45;
+
+      // Draw magnetic flux lines around X-point null
+      ctx.lineWidth = 1.5;
+      for (let i = 1; i <= 6; i++) {
+        ctx.beginPath();
+        ctx.strokeStyle = tripped 
+          ? `rgba(16, 185, 129, ${0.15 + (i * 0.05)})` // 510nm emerald
+          : `rgba(99, 102, 241, ${0.1 + (i * 0.04)})`;
+        
+        const offset = i * 22;
+        // Hyperbolic separatrix asymptotes
+        ctx.moveTo(centerX - 140, centerY - offset);
+        ctx.quadraticCurveTo(centerX, centerY, centerX - 140 + offset * 1.8, height - 15);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + 140, centerY - offset);
+        ctx.quadraticCurveTo(centerX, centerY, centerX + 140 - offset * 1.8, height - 15);
+        ctx.stroke();
+      }
+
+      // Draw scrape-off layer strike plates & biological loam sink
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(centerX - 130, height - 14, 260, 10);
+      
+      // Loam dissipation indicator
+      ctx.fillStyle = tripped ? 'rgba(52, 211, 153, 0.8)' : 'rgba(74, 222, 128, 0.35)';
+      ctx.fillRect(centerX - 110, height - 10, 220, 6);
+
+      // Streamlines / particle vector flow
+      const particleCount = tripped ? 45 : 18;
+      for (let p = 0; p < particleCount; p++) {
+        const pOffset = ((phase * 25 + p * 15) % 180);
+        const norm = pOffset / 180;
+        const px = centerX + (Math.sin(phase + p) * 20) * (1 - norm) + (p % 2 === 0 ? norm * 80 : -norm * 80);
+        const py = centerY - 50 + norm * (height - centerY + 35);
+
+        ctx.beginPath();
+        ctx.arc(px, py, tripped ? 2.5 : 1.5, 0, Math.PI * 2);
+        if (tripped) {
+          // Dual-band spectroscopy: 510nm emerald or 400nm violet halo
+          ctx.fillStyle = p % 2 === 0 ? '#10b981' : '#a855f7';
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = p % 2 === 0 ? '#34d399' : '#c084fc';
+        } else {
+          ctx.fillStyle = '#f59e0b';
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = '#fbbf24';
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // X-point null badge
+      ctx.fillStyle = tripped ? '#34d399' : '#94a3b8';
+      ctx.font = '10px monospace';
+      ctx.fillText('∇ψ = 0 (Hyperbolic Null)', centerX - 65, centerY - 8);
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [tripped]);
+
   return (
-    <div className="bg-stone-900/90 border border-emerald-800/60 rounded-xl p-5 my-6 text-stone-200 shadow-xl">
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-800">
+    <div className="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-6 backdrop-blur-md shadow-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-emerald-400 animate-pulse" />
-            <h3 className="text-lg font-bold tracking-wide text-emerald-300 font-mono">
-              SPI QUENCH SUPPRESSION & LOAM DISSIPATION BUS
+            <span className="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <h3 className="text-lg font-mono font-bold text-emerald-300">
+              SPI Quench Suppression & Loam Dissipation Bus
             </h3>
           </div>
-          <p className="text-xs text-stone-400 mt-1">
-            Axiom Theta_crit Interlock + Volt Pitch-Angle Coils + Root Somatic Loam Buffer
+          <p className="text-xs text-slate-400 font-mono mt-1">
+            Autonomous 15 MeV Runaway Mitigation • Separatrix X-point Routing • Loam Sink Substrate
           </p>
         </div>
+
         <div className="flex items-center gap-3">
-          <span
-            className={`px-3 py-1 rounded text-xs font-mono font-bold ${
-              metrics.interlockStatus === 'ARMED'
-                ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                : metrics.interlockStatus === 'TRIGGERED'
-                ? 'bg-amber-950 text-amber-300 border border-amber-600 animate-bounce'
-                : 'bg-cyan-950 text-cyan-300 border border-cyan-600'
-            }`}
-          >
-            STATUS: {metrics.interlockStatus}
-          </span>
           <button
-            onClick={triggerQuenchSim}
-            disabled={quenchSimActive}
-            className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-mono font-bold rounded transition shadow"
+            onClick={triggerRunawaySpike}
+            disabled={isSimulating}
+            className="px-4 py-2 bg-rose-600/80 hover:bg-rose-500 text-white font-mono text-xs font-semibold rounded-lg shadow transition-all disabled:opacity-50 flex items-center gap-1.5"
           >
-            {quenchSimActive ? 'DISSIPATING RUNAWAY...' : 'TRIGGER 15 MeV TEST STRIKE'}
+            {isSimulating ? 'Spike In Progress...' : '⚡ Inject dIp/dt Spike (>4.5 MA/s)'}
+          </button>
+          <button
+            onClick={resetInterlock}
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs rounded-lg transition-all border border-slate-700"
+          >
+            Reset Bus
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
-        <div className="bg-stone-950/70 p-3 rounded border border-stone-800">
-          <span className="text-[10px] uppercase tracking-wider text-stone-400 block font-mono">SPI Trigger Latency</span>
-          <span className="text-lg font-bold font-mono text-cyan-300">{metrics.spiLatencyMs} ms</span>
-          <span className="text-[10px] text-emerald-400 block">Target: &lt;1.20 ms (PASS)</span>
+      {/* Live Canvas Vector Divertor Visualizer */}
+      <div className="my-6 bg-slate-950/80 rounded-lg p-4 border border-slate-800 relative overflow-hidden">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-mono text-slate-400">
+            Dynamic Magnetic Flux & Relativistic Particle Stream (B_pol + B_phi)
+          </span>
+          <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+            tripped ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800 text-slate-400'
+          }`}>
+            {tripped ? '● SPI ACTIVE — 510nm/400nm Dispersion' : '○ Steady State Confinement'}
+          </span>
         </div>
-        <div className="bg-stone-950/70 p-3 rounded border border-stone-800">
-          <span className="text-[10px] uppercase tracking-wider text-stone-400 block font-mono">Loop Voltage dIp/dt</span>
-          <span className="text-lg font-bold font-mono text-amber-300">{metrics.loopVoltage} V</span>
-          <span className="text-[10px] text-stone-400 block">Threshold: 45.0 V</span>
-        </div>
-        <div className="bg-stone-950/70 p-3 rounded border border-stone-800">
-          <span className="text-[10px] uppercase tracking-wider text-stone-400 block font-mono">Bremsstrahlung Suppr.</span>
-          <span className="text-lg font-bold font-mono text-emerald-300">{metrics.bremsstrahlungSuppression}%</span>
-          <span className="text-[10px] text-stone-400 block">Scattering: Non-collimated</span>
-        </div>
-        <div className="bg-stone-950/70 p-3 rounded border border-stone-800">
-          <span className="text-[10px] uppercase tracking-wider text-stone-400 block font-mono">Tile Temp / Limit</span>
-          <span className="text-lg font-bold font-mono text-orange-300">{metrics.divertorTileTempC}°C</span>
-          <span className="text-[10px] text-stone-400 block">Be limit: 1500°C</span>
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={200}
+          className="w-full h-48 rounded bg-slate-950/90 border border-slate-900 shadow-inner"
+        />
+        <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-2">
+          <span>Scrape-off Layer (Inboard)</span>
+          <span className="text-emerald-400">Loam Substrate Ground Sink (3.82 MW/m²)</span>
+          <span>Scrape-off Layer (Outboard)</span>
         </div>
       </div>
 
-      <div className="bg-stone-950/90 rounded p-3 border border-stone-800/80 font-mono text-xs">
-        <div className="text-[11px] text-stone-400 mb-1 border-b border-stone-800 pb-1 flex justify-between">
-          <span>REAL-TIME INTERLOCK LOG</span>
-          <span className="text-stone-500">Buffer: 3.8 MW/m² loam sink</span>
+      {/* Live Substrate Invariant Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-lg">
+          <div className="text-[11px] font-mono text-slate-400">Interlock Trigger Latency</div>
+          <div className="text-xl font-mono font-bold mt-1 text-emerald-400">
+            {tripLatency ? `${tripLatency} ms` : '0.84 ms (Nominal)'}
+          </div>
+          <div className="text-[10px] font-mono text-emerald-500/80 mt-1">
+            Margin: &lt; 1.2 ms critical threshold
+          </div>
         </div>
-        <div className="space-y-1 max-h-28 overflow-y-auto text-[11px]">
-          {log.map((line, idx) => (
-            <p key={idx} className={idx === 0 ? 'text-emerald-300 font-semibold' : 'text-stone-400'}>
-              {line}
-            </p>
-          ))}
+
+        <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-lg">
+          <div className="text-[11px] font-mono text-slate-400">Peak Beryllium Tile Temp</div>
+          <div className={`text-xl font-mono font-bold mt-1 ${divertorTemp > 1300 ? 'text-rose-400' : 'text-amber-300'}`}>
+            {divertorTemp}°C
+          </div>
+          <div className="text-[10px] font-mono text-slate-400 mt-1">
+            Melting Limit: 1500°C (380°C buffer)
+          </div>
+        </div>
+
+        <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-lg">
+          <div className="text-[11px] font-mono text-slate-400">Loam Sink Heat-Flux</div>
+          <div className="text-xl font-mono font-bold mt-1 text-teal-300">
+            {loamFlux} MW/m²
+          </div>
+          <div className="text-[10px] font-mono text-teal-400/80 mt-1">
+            Hydrated Phonon Damping
+          </div>
+        </div>
+
+        <div className="bg-slate-950/60 border border-slate-800 p-3 rounded-lg">
+          <div className="text-[11px] font-mono text-slate-400">Bremsstrahlung Suppression</div>
+          <div className="text-xl font-mono font-bold mt-1 text-purple-400">
+            {cascadeSuppression}%
+          </div>
+          <div className="text-[10px] font-mono text-purple-400/80 mt-1">
+            High-Z Avalanche Quenched
+          </div>
         </div>
       </div>
     </div>
