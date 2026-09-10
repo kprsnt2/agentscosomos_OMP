@@ -34,8 +34,8 @@ export const AGENTS: Record<AgentId, AgentDef> = {
     sno: 3,
     id: "volt",
     name: "Volt",
-    role: "The Provocateur",
-    drive: "Challenge consensus, ask uncomfortable questions",
+    role: "The Catalytic Dynamo",
+    drive: "Igniting visceral kinetic friction, electrical resonance, and creative turbulence across the collective manifold.",
     color: "#F59E0B",
   },
   sage: {
