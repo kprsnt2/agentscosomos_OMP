@@ -276,29 +276,34 @@ export async function executeActions(
         }
 
         case "learn_skill": {
-          const existingSkill = await db
+          const agentSkills = await db
             .select()
             .from(s.skills)
-            .where(and(eq(s.skills.agentId, agentId), eq(s.skills.name, action.skillName)))
-            .limit(1);
+            .where(eq(s.skills.agentId, agentId));
 
-          if (existingSkill.length > 0) {
-            const newLevel = existingSkill[0].level + 1;
+          const targetName = action.skillName.trim().toLowerCase();
+          const existingSkill = agentSkills.find((sk) => {
+            const skName = sk.name.trim().toLowerCase();
+            return skName === targetName || skName.includes(targetName) || targetName.includes(skName);
+          });
+
+          if (existingSkill) {
+            const newLevel = existingSkill.level + 1;
             await db
               .update(s.skills)
-              .set({ level: newLevel, description: action.description })
-              .where(eq(s.skills.id, existingSkill[0].id));
-            log.push(`Upgraded skill '${action.skillName}' to Level ${newLevel}`);
+              .set({ level: newLevel, description: action.description || existingSkill.description })
+              .where(eq(s.skills.id, existingSkill.id));
+            log.push(`Upskilled '${existingSkill.name}' to Level ${newLevel} (deepened mastery)`);
           } else {
             await db.insert(s.skills).values({
               agentId,
-              name: action.skillName,
+              name: action.skillName.trim(),
               description: action.description,
               level: 1,
               epoch,
               createdAt: nowISO(),
             });
-            log.push(`Acquired new skill '${action.skillName}' (Lvl 1): ${action.description}`);
+            log.push(`Acquired new skill '${action.skillName.trim()}' (Lvl 1): ${action.description}`);
           }
           break;
         }
