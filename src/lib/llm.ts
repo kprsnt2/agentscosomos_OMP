@@ -84,17 +84,30 @@ export async function complete(params: CompletionParams): Promise<CompletionResu
       await waitForRateLimit(provider.name);
       const client = getClient(provider);
 
-      const response = await client.chat.completions.create({
+      const tokenLimit = params.maxTokens ?? 1000;
+
+      // Newer OpenAI models (gpt-4o, gpt-5, o-series) require max_completion_tokens
+      // Other providers (OpenRouter, Groq, Gemini) require max_tokens
+      const body: Parameters<typeof client.chat.completions.create>[0] = {
         model: provider.model,
         messages: [
           { role: "system", content: params.system },
           { role: "user", content: params.prompt },
         ],
-        temperature: params.temperature ?? 0.9,
-        max_tokens: params.maxTokens ?? 2048,
-      });
+        temperature: params.temperature ?? 0.8,
+        stream: false,
+        ...(provider.name === "openai"
+          ? { max_completion_tokens: tokenLimit }
+          : { max_tokens: tokenLimit }),
+      };
+
+      const response = await client.chat.completions.create(body);
 
       recordCall(provider.name);
+
+      if (!("choices" in response)) {
+        throw new Error("Unexpected stream response from model");
+      }
 
       const choice = response.choices[0];
       if (!choice?.message?.content) {

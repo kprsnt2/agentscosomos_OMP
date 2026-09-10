@@ -106,8 +106,8 @@ export async function think(ctx: AgentContext): Promise<TurnOutput> {
   const result = await complete({
     system: systemPrompt,
     prompt: userPrompt,
-    temperature: 0.9,
-    maxTokens: 2048,
+    temperature: 0.8,
+    maxTokens: 1000,
   });
 
   console.log(`  [${ctx.agentId}] Response from ${result.provider}/${result.model} (${result.tokensUsed.prompt}+${result.tokensUsed.completion} tokens)`);
