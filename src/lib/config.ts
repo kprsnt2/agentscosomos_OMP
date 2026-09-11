@@ -69,7 +69,7 @@ export const config = {
   /** Perception window: how many past epochs agents see in full */
   perceptionWindow: 2,
   /** Max tokens for agent memory before summarization */
-  memoryMaxTokens: 2000,
+  memoryMaxTokens: 10000,
   /** Epochs before a proposal expires if not enough votes */
   proposalTTL: 4,
   /** Minimum votes needed to pass (majority of 8 agents) */

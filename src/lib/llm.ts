@@ -134,7 +134,7 @@ export async function complete(params: CompletionParams): Promise<CompletionResu
       await waitForRateLimit(provider.name);
       const client = getClient(provider);
 
-      const tokenLimit = params.maxTokens ?? 1000;
+      const tokenLimit = params.maxTokens ?? 10000;
 
       // Newer OpenAI models (gpt-4o, gpt-5, o-series) require max_completion_tokens
       // Other providers (OpenRouter, Groq, Gemini) require max_tokens
