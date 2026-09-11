@@ -51,6 +51,13 @@ export interface AgentContext {
   skills: Array<{ name: string; description: string; level: number }>;
   /** All active inhabitants */
   allInhabitants: Array<{ id: string; name: string; role: string }>;
+  /** Existing permanent site pages */
+  existingPages: Array<{
+    slug: string;
+    title: string;
+    createdBy: string;
+    createdEpoch: number;
+  }>;
 }
 
 export async function buildContext(
@@ -161,6 +168,17 @@ export async function buildContext(
   // Fetch all current inhabitants
   const allAgents = await db.select().from(s.agents);
 
+  // Fetch existing permanent site pages
+  const existingPages = await db
+    .select({
+      slug: s.pages.slug,
+      title: s.pages.title,
+      createdBy: s.pages.createdBy,
+      createdEpoch: s.pages.createdEpoch,
+    })
+    .from(s.pages)
+    .orderBy(desc(s.pages.id));
+
   return {
     agentId,
     epoch,
@@ -194,5 +212,6 @@ export async function buildContext(
       name: a.name,
       role: a.role,
     })),
+    existingPages,
   };
 }

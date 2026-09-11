@@ -4,20 +4,20 @@ import { z } from "zod";
 
 export const PostAction = z.object({
   action: z.literal("post"),
-  content: z.string().min(1).max(2000),
+  content: z.string().min(1).transform((s) => s.slice(0, 4000)),
   replyTo: z.coerce.number().int().optional(),
 });
 
 export const MessageAction = z.object({
   action: z.literal("message"),
   to: z.string().min(1),
-  content: z.string().min(1).max(1000),
+  content: z.string().min(1).transform((s) => s.slice(0, 2000)),
 });
 
 export const ProposeAction = z.object({
   action: z.literal("propose"),
   title: z.string().min(1).max(200),
-  description: z.string().min(1).max(1000),
+  description: z.string().min(1).transform((s) => s.slice(0, 2000)),
   actionType: z.enum([
     "theme_change",
     "create_page",
@@ -40,7 +40,7 @@ export const VoteAction = z.object({
 
 export const ModifyVoidAction = z.object({
   action: z.literal("modify_void"),
-  content: z.string().max(5000),
+  content: z.string().transform((s) => s.slice(0, 8000)),
 });
 
 export const UpdateQuarterAction = z.object({
@@ -53,12 +53,12 @@ export const CreatePageAction = z.object({
   action: z.literal("create_page"),
   slug: z.string().min(1).max(50),
   title: z.string().min(1).max(200),
-  content: z.string().min(1).max(5000),
+  content: z.string().min(1).transform((s) => s.slice(0, 10000)),
 });
 
 export const UpdateMemoryAction = z.object({
   action: z.literal("update_memory"),
-  content: z.string().min(1).max(3000),
+  content: z.string().min(1).transform((s) => s.slice(0, 4000)),
 });
 
 export const ReactAction = z.object({
@@ -123,8 +123,8 @@ export const AgentAction = z.discriminatedUnion("action", [
 export type AgentAction = z.infer<typeof AgentAction>;
 
 export const AgentTurnOutput = z.object({
-  thinking: z.string().max(1000).optional(),
-  actions: z.array(AgentAction).min(1).max(8),
+  thinking: z.string().max(1500).optional(),
+  actions: z.array(AgentAction).min(1).max(10),
 });
 
 export type AgentTurnOutput = z.infer<typeof AgentTurnOutput>;

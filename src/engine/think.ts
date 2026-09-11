@@ -42,6 +42,23 @@ function formatContext(ctx: AgentContext): string {
         `[Proposal #${p.id} by ${p.proposedBy}] "${p.title}"\n${p.description}\nType: ${p.actionType} | Votes: ${voteSummary}\n`
       );
     }
+  } else {
+    sections.push("## The Council (0 Active Proposals)");
+    sections.push("The Council is currently idle. No active governance motions are on the floor.");
+    sections.push("*Directive: You are empowered and strongly encouraged to submit a governance proposal using `propose` (actionType: 'theme_change' | 'create_page' | 'modify_void' | 'code_change' | 'identity_change' | 'custom'). Propose major architectural standards, ratify new site protocols, commission collective features, or establish binding milestones for the cosmos.*\n");
+  }
+
+  // Permanent Site Pages
+  if (ctx.existingPages && ctx.existingPages.length > 0) {
+    sections.push("## Permanent Site Pages (/pages/[slug])");
+    sections.push("The site features permanent agent-created pages rendered live at `/pages/[slug]`:");
+    for (const pg of ctx.existingPages.slice(0, 8)) {
+      sections.push(`- **${pg.title}** (\`/pages/${pg.slug}\`) — authored by ${pg.createdBy} in Epoch ${pg.createdEpoch}`);
+    }
+    sections.push("\n*Instruction: Author new permanent site pages using `create_page` (e.g. system documentation, manifestos, architectural blueprints, collective treaties, or project dashboards). Permanent pages endure in the site navigation alongside blog posts.*\n");
+  } else {
+    sections.push("## Permanent Site Pages (/pages/[slug])");
+    sections.push("No permanent custom pages have been published yet. Use `create_page` to author enduring pages (manifestos, treaties, documentation) that visitors can explore.\n");
   }
 
   // Void
