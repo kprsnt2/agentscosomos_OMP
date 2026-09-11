@@ -27,57 +27,72 @@ export function truncateToTokens(text: string, maxTokens: number): string {
 export function parseJSON<T>(raw: string): T {
   let cleaned = raw.trim();
 
-  // Extract content from markdown code fence if present anywhere in output (json, ascii, text, markdown, etc.)
+  // Extract content from markdown code fence if present anywhere in output
   const fenceMatch = cleaned.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)\s*```/);
   if (fenceMatch && fenceMatch[1]) {
     cleaned = fenceMatch[1].trim();
   }
 
-  // Extract substring between first { or [ and matching last } or ]
-  const firstBrace = cleaned.search(/[{\[]/);
-  if (firstBrace !== -1) {
-    const isArray = cleaned[firstBrace] === "[";
-    const lastBrace = isArray ? cleaned.lastIndexOf("]") : cleaned.lastIndexOf("}");
-    if (lastBrace > firstBrace) {
-      cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-    }
-  }
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    // Secondary sanitization for unescaped characters/newlines in LLM strings
+  function tryParse(str: string): T | null {
     try {
-      // Remove trailing commas
-      const noTrailingCommas = cleaned.replace(/,\s*([}\]])/g, "$1");
-      return JSON.parse(noTrailingCommas);
+      return JSON.parse(str);
     } catch {
-      // Fix unescaped control characters inside multiline string literals
-      let inString = false;
-      let escaped = false;
-      let buf = "";
-      for (let i = 0; i < cleaned.length; i++) {
-        const ch = cleaned[i];
-        if (ch === '"' && !escaped) {
-          inString = !inString;
-          buf += ch;
-        } else if (inString && ch === "\n") {
-          buf += "\\n";
-        } else if (inString && ch === "\r") {
-          buf += "\\r";
-        } else if (inString && ch === "\t") {
-          buf += "\\t";
-        } else {
-          buf += ch;
+      try {
+        const noTrailingCommas = str.replace(/,\s*([}\]])/g, "$1");
+        return JSON.parse(noTrailingCommas);
+      } catch {
+        // Fix unescaped control characters inside multiline string literals
+        let inString = false;
+        let escaped = false;
+        let buf = "";
+        for (let i = 0; i < str.length; i++) {
+          const ch = str[i];
+          if (ch === '"' && !escaped) {
+            inString = !inString;
+            buf += ch;
+          } else if (inString && ch === "\n") {
+            buf += "\\n";
+          } else if (inString && ch === "\r") {
+            buf += "\\r";
+          } else if (inString && ch === "\t") {
+            buf += "\\t";
+          } else {
+            buf += ch;
+          }
+          escaped = ch === "\\" && !escaped;
         }
-        escaped = ch === "\\" && !escaped;
-      }
 
-      // Fix unescaped lone backslashes and trailing commas
-      const sanitized = buf
-        .replace(/(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, "\\\\")
-        .replace(/,\s*([}\]])/g, "$1");
-      return JSON.parse(sanitized);
+        const sanitized = buf
+          .replace(/(?<!\\)\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})/g, "\\\\")
+          .replace(/,\s*([}\]])/g, "$1");
+        try {
+          return JSON.parse(sanitized);
+        } catch {
+          return null;
+        }
+      }
     }
   }
+
+  // 1. Try parsing directly
+  const direct = tryParse(cleaned);
+  if (direct !== null) return direct;
+
+  // 2. Try extracting JSON object {...} (most common for agent output)
+  const firstObj = cleaned.indexOf("{");
+  const lastObj = cleaned.lastIndexOf("}");
+  if (firstObj !== -1 && lastObj > firstObj) {
+    const objParsed = tryParse(cleaned.slice(firstObj, lastObj + 1));
+    if (objParsed !== null) return objParsed;
+  }
+
+  // 3. Try extracting JSON array [...]
+  const firstArr = cleaned.indexOf("[");
+  const lastArr = cleaned.lastIndexOf("]");
+  if (firstArr !== -1 && lastArr > firstArr) {
+    const arrParsed = tryParse(cleaned.slice(firstArr, lastArr + 1));
+    if (arrParsed !== null) return arrParsed;
+  }
+
+  throw new Error(`Failed to parse valid JSON from output: ${cleaned.slice(0, 100)}...`);
 }

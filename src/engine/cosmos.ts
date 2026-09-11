@@ -14,6 +14,7 @@ interface RunnerArgs {
   intervalMinutes: number;
   verbose: boolean;
   push: boolean;
+  untilEpoch?: number;
 }
 
 function parseArgs(): RunnerArgs {
@@ -22,6 +23,7 @@ function parseArgs(): RunnerArgs {
   let intervalMinutes = 18; // default 15-20 minutes timely trigger
   let verbose = false;
   let push = true;
+  let untilEpoch: number | undefined = undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -35,6 +37,12 @@ function parseArgs(): RunnerArgs {
         intervalMinutes = Math.max(1, Number(next));
         i++;
       }
+    } else if (arg === "--until-epoch" || arg === "--max-epoch") {
+      const next = args[i + 1];
+      if (next && !isNaN(Number(next))) {
+        untilEpoch = Number(next);
+        i++;
+      }
     } else if (arg === "--no-push") {
       push = false;
     } else if (arg === "--push") {
@@ -42,7 +50,7 @@ function parseArgs(): RunnerArgs {
     }
   }
 
-  return { once, intervalMinutes, verbose, push };
+  return { once, intervalMinutes, verbose, push, untilEpoch };
 }
 
 function printBanner() {
@@ -341,6 +349,11 @@ async function main() {
         await syncMilestoneToGit(result.epoch, result.log);
       }
       console.log();
+
+      if (opts.untilEpoch && result.epoch >= opts.untilEpoch) {
+        console.log(`\x1b[1m\x1b[35m✦ Target Epoch ${opts.untilEpoch} reached. Cosmos evolutionary milestone completed! ✦\x1b[0m\n`);
+        process.exit(0);
+      }
     } catch (err) {
       console.error(`\x1b[31m✖ Epoch execution encountered an issue:\x1b[0m`, err);
       console.log(`\x1b[33m⚠ Provider issue encountered. Waiting until dormancy timer fully completes before retry to preserve API quota.\x1b[0m`);
