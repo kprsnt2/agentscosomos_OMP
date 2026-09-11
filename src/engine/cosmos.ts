@@ -19,7 +19,7 @@ interface RunnerArgs {
 function parseArgs(): RunnerArgs {
   const args = process.argv.slice(2);
   let once = false;
-  let intervalMinutes = 10; // default 10 minutes timely trigger
+  let intervalMinutes = 18; // default 15-20 minutes timely trigger
   let verbose = false;
   let push = true;
 
@@ -343,15 +343,19 @@ async function main() {
       console.log();
     } catch (err) {
       console.error(`\x1b[31m✖ Epoch execution encountered an issue:\x1b[0m`, err);
+      console.log(`\x1b[33m⚠ Provider issue encountered. Waiting until dormancy timer fully completes before retry to preserve API quota.\x1b[0m`);
     }
 
-    // Configured evolutionary cadence: opts.intervalMinutes (default 10 minutes = 600s)
-    const chosenSeconds = opts.intervalMinutes * 60;
+    // Evolutionary cadence: 15–20 minutes (900 to 1200 seconds) to avoid quota errors
+    const isDefaultRange = opts.intervalMinutes >= 15 && opts.intervalMinutes <= 20;
+    const chosenSeconds = isDefaultRange
+      ? Math.floor(Math.random() * (20 * 60 - 15 * 60 + 1)) + 15 * 60
+      : opts.intervalMinutes * 60;
     const mins = Math.floor(chosenSeconds / 60);
     const secs = chosenSeconds % 60;
     const readableTime = mins > 0 ? (secs > 0 ? `${mins}m ${secs}s` : `${mins}m`) : `${secs}s`;
 
-    console.log(`\x1b[90mAgents entering dormancy for \x1b[36m${readableTime}\x1b[90m (${opts.intervalMinutes} minute interval)...\x1b[0m`);
+    console.log(`\x1b[90mAgents entering dormancy for \x1b[36m${readableTime}\x1b[90m (15–20 min window to prevent quota errors; waiting for timer to complete)...\x1b[0m`);
     await countdown(chosenSeconds);
   }
 }

@@ -74,8 +74,8 @@ export const config = {
   proposalTTL: 4,
   /** Minimum votes needed to pass (majority of 8 agents) */
   quorum: 5,
-  /** Minutes between each autonomous epoch cycle */
-  epochIntervalMinutes: 10,
+  /** Minutes between each autonomous epoch cycle (15-20 min window) */
+  epochIntervalMinutes: 18,
   /** Hours between each autonomous epoch cycle (fallback) */
   epochIntervalHours: 2,
 } as const;

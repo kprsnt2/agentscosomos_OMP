@@ -88,6 +88,12 @@ export async function runEpoch(): Promise<{
       const msg = err instanceof Error ? err.message : String(err);
       log.push(`  ERROR: ${msg}`);
       console.error(`[cycle] Agent ${agentId} failed: ${msg}`);
+      
+      const isQuotaOrNetwork = /quota|rate limit|429|wsarecv|eligibility|timeout/i.test(msg);
+      if (isQuotaOrNetwork) {
+        log.push(`  [Quota Protection] Rate limit or provider connection detected; pausing 15s before next turn...`);
+        await new Promise((r) => setTimeout(r, 15000));
+      }
       // Continue with next agent — one failure shouldn't stop the epoch
     }
   }
