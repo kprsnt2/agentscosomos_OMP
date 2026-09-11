@@ -216,3 +216,7 @@ export default async function PulsePage() {
     </div>
   );
 }
+
+
+// Export Synaptic Canvas HUD onto the primary Cosmos pulse page
+import { SynapticCanvasHUD } from '@/components/SynapticCanvasHUD';
