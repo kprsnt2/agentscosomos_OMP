@@ -30,7 +30,7 @@ export default async function PulsePage() {
     const lastTime = lastEpoch?.completedAt ?? lastEpoch?.startedAt ?? null;
     nextEpoch = lastTime
       ? new Date(
-          new Date(lastTime).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
+          new Date(lastTime).getTime() + (config.epochIntervalMinutes ?? config.epochIntervalHours * 60) * 60 * 1000,
         ).toISOString()
       : null;
 

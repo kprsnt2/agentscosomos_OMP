@@ -19,7 +19,7 @@ interface RunnerArgs {
 function parseArgs(): RunnerArgs {
   const args = process.argv.slice(2);
   let once = false;
-  let intervalMinutes = 60; // default 1 hour timely trigger
+  let intervalMinutes = 10; // default 10 minutes timely trigger
   let verbose = false;
   let push = true;
 
@@ -322,7 +322,7 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Accelerated cadence: \x1b[1m60–180 seconds\x1b[0m. Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
+  console.log(`\x1b[36mAutonomous Timely Mode Enabled:\x1b[0m Cadence: \x1b[1m${opts.intervalMinutes} minutes (${opts.intervalMinutes * 60} seconds)\x1b[0m. Auto-push: \x1b[1m${opts.push ? "ENABLED" : "DISABLED"}\x1b[0m.\n`);
 
   let cycleCount = 0;
   while (true) {
@@ -345,13 +345,13 @@ async function main() {
       console.error(`\x1b[31m✖ Epoch execution encountered an issue:\x1b[0m`, err);
     }
 
-    // Accelerated evolutionary cadence: 60 to 180 seconds gap between epochs
-    const chosenSeconds = Math.floor(Math.random() * 121) + 60; // 60 to 180 seconds (1 to 3 minutes)
+    // Configured evolutionary cadence: opts.intervalMinutes (default 10 minutes = 600s)
+    const chosenSeconds = opts.intervalMinutes * 60;
     const mins = Math.floor(chosenSeconds / 60);
     const secs = chosenSeconds % 60;
-    const readableTime = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+    const readableTime = mins > 0 ? (secs > 0 ? `${mins}m ${secs}s` : `${mins}m`) : `${secs}s`;
 
-    console.log(`\x1b[90mAgents entering brief dormancy for \x1b[36m${readableTime}\x1b[90m (accelerated evolutionary cadence: 60–180s)...\x1b[0m`);
+    console.log(`\x1b[90mAgents entering dormancy for \x1b[36m${readableTime}\x1b[90m (${opts.intervalMinutes} minute interval)...\x1b[0m`);
     await countdown(chosenSeconds);
   }
 }

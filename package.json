@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "cycle": "tsx src/engine/run.ts",
     "cosmos": "tsx src/engine/cosmos.ts",
+    "cosmos:10m": "tsx src/engine/cosmos.ts --interval 10",
     "cosmos:once": "tsx src/engine/cosmos.ts --once",
     "cosmos:fast": "tsx src/engine/cosmos.ts --interval 5"
   },

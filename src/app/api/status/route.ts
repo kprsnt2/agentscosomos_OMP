@@ -23,7 +23,7 @@ export async function GET() {
     const lastTimestamp = lastEpochRow?.completedAt ?? lastEpochRow?.startedAt;
     const nextEstimate = lastTimestamp
       ? new Date(
-          new Date(lastTimestamp).getTime() + config.epochIntervalHours * 60 * 60 * 1000,
+          new Date(lastTimestamp).getTime() + (config.epochIntervalMinutes ?? config.epochIntervalHours * 60) * 60 * 1000,
         ).toISOString()
       : null;
 
